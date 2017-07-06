@@ -1,0 +1,58 @@
+{
+  "name": "node-jwt",
+  "version": "0.0.1",
+  "description": "express JWT middleware",
+  "main": "index.js",
+  "nyc": {
+    "all": true,
+    "lines": 80,
+    "reporter": [
+      "lcov",
+      "text"
+    ],
+    "include": [
+      "src/**/*.js"
+    ],
+    "exclude": [
+      "src/test/**/*.js"
+    ],
+    "sourceMap": false,
+    "instrument": false
+  },
+  "scripts": {
+    "coverage:check": "cross-env NODE_ENV=test nyc check-coverage",
+    "coverage:run": "cross-env NODE_ENV=test nyc mocha 'src/test/**/*.js'",
+    "lint:check": "eslint src/ scripts/ && prettier --no-semi --trailing-comma es5 --list-different \"src/**/*.js\" \"scripts/**/*.js\"",
+    "lint:fix": "eslint --fix src/ scripts/ && prettier --no-semi --trailing-comma es5 --write \"src/**/*.js\" \"scripts/**/*.js\"",
+    "test": "NODE_ENV=test mocha 'src/test/**/*.js'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://gerrit.instructure.com:29418/node-jwt"
+  },
+  "keywords": [
+    "node",
+    "express",
+    "jwt"
+  ],
+  "author": "Xander Moffatt, Andrew Huff",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "express": "^4.15.3",
+    "jsonwebtoken": "^7.4.1"
+  },
+  "devDependencies": {
+    "chai": "^4.0.2",
+    "cross-env": "^5.0.1",
+    "eslint": "^4.1.1",
+    "eslint-plugin-mocha": "^4.11.0",
+    "eslint-plugin-promise": "^3.5.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.4.2",
+    "nyc": "^11.0.3",
+    "prettier": "^1.5.2",
+    "sinon": "^2.3.6",
+    "sinon-chai": "^2.11.0"
+  }
+}
