@@ -2,7 +2,7 @@
   "name": "node-jwt",
   "version": "0.0.1",
   "description": "express JWT middleware",
-  "main": "index.js",
+  "main": "src/auth.js",
   "nyc": {
     "all": true,
     "lines": 80,

@@ -62,9 +62,11 @@ exports._getToken = function _getToken(req) {
         return credentials
       }
     }
-    throw new exports.UnauthorizedError("Format is Authorization: Bearer [token]")
+    throw new exports.UnauthorizedError(
+      "Format is Authorization: Bearer [token]"
+    )
   }
-  throw new exports.UnauthorizedError("No token provided")
+  throw new exports.UnauthorizedError("No authorization token was found")
 }
 
 exports._createToken = function _createToken(payload, kid) {
