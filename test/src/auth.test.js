@@ -1,4 +1,4 @@
-const { expect } = require("chai")
+const { expect, expectRejection } = require("chai")
 const sinon = require("sinon")
 const stubEnv = require("../stubEnv")
 const auth = require("../../src/auth")
@@ -48,6 +48,9 @@ describe("API authorization", function() {
   describe("_buildKeystore", function() {
     describe("from AUTH_SECRET", function() {
       stubEnv()
+      beforeEach(function() {
+        delete process.env.CONSUL_JWT_SECRET_PREFIX
+      })
 
       it("fails when secret isn't set", function() {
         delete process.env.AUTH_SECRET
@@ -59,50 +62,56 @@ describe("API authorization", function() {
         expect(auth._buildKeystore).to.throw
       })
 
-      it("extracts default secret", function() {
+      it("extracts default secret", async function() {
         const buffer = Buffer.from("sUpEr SecReT!1!")
         const secret = buffer.toString("base64")
         process.env.AUTH_SECRET = secret
-        expect(auth._buildKeystore()).to.deep.equal({
+        const keystore = await auth._buildKeystore()
+        expect(keystore).to.deep.equal({
           default: buffer,
         })
       })
 
-      it("extracts keyed secrets", function() {
+      it("extracts keyed secrets", async function() {
         const b1 = Buffer.from("secret1")
         const b2 = Buffer.from("secret2")
         const s1 = b1.toString("base64")
         const s2 = b2.toString("base64")
         process.env.AUTH_SECRET = `secret1:${s1} secret2:${s2}`
-        expect(auth._buildKeystore()).to.deep.equal({
+        const keystore = await auth._buildKeystore()
+        expect(keystore).to.deep.equal({
           secret1: b1,
           secret2: b2,
         })
       })
 
-      it("extracts default + keyed secrets", function() {
+      it("extracts default + keyed secrets", async function() {
         const b1 = Buffer.from("secret1")
         const b2 = Buffer.from("secret2")
         const s1 = b1.toString("base64")
         const s2 = b2.toString("base64")
         process.env.AUTH_SECRET = `${s1} secret2:${s2}`
-        expect(auth._buildKeystore()).to.deep.equal({
+        const keystore = await auth._buildKeystore()
+        expect(keystore).to.deep.equal({
           default: b1,
           secret2: b2,
         })
       })
 
-      it("only extracts a single default secret", function() {
+      it("only extracts a single default secret", async function() {
         const b1 = Buffer.from("secret1")
         const b2 = Buffer.from("secret2")
         const s1 = b1.toString("base64")
         const s2 = b2.toString("base64")
         process.env.AUTH_SECRET = `${s1} ${s2}`
-        expect(auth._buildKeystore()).to.deep.equal({
+        const keystore = await auth._buildKeystore()
+        expect(keystore).to.deep.equal({
           default: b2,
         })
       })
     })
+
+    describe("from Consul", function() {})
   })
 
   describe("_deny", function() {
@@ -147,36 +156,36 @@ describe("API authorization", function() {
       auth._buildKeystore.restore()
     })
 
-    it("returns the JWT payload", function() {
+    it("returns the JWT payload", async function() {
       sinon.stub(auth, "_buildKeystore").returns({ default: secret })
 
       const payload = { a: 1 }
-      const token = auth.createToken(payload)
-      const result = auth._verifyToken(token)
+      const token = await auth.createToken(payload)
+      const result = await auth._verifyToken(token)
       expect(result).to.include(payload)
     })
 
-    it("uses secret with kid if kid is included in header", function() {
+    it("uses secret with kid if kid is included in header", async function() {
       sinon.stub(auth, "_buildKeystore").returns({ kid: secret })
 
-      const token = auth.createToken({}, "kid")
-      const result = auth._verifyToken(token)
+      const token = await auth.createToken({}, "kid")
+      const result = await auth._verifyToken(token)
       expect(result).to.not.be.undefined
     })
 
-    it("tries all secrets if no default or kid", function() {
+    it("tries all secrets if no default or kid", async function() {
       sinon.stub(auth, "_buildKeystore").returns({ other: secret })
 
-      const token = auth.createToken({})
-      const result = auth._verifyToken(token)
+      const token = await auth.createToken({})
+      const result = await auth._verifyToken(token)
       expect(result).to.not.be.undefined
     })
 
-    it("verifies if given kid doesn't exist", function() {
+    it("verifies if given kid doesn't exist", async function() {
       sinon.stub(auth, "_buildKeystore").returns({ default: secret })
 
-      const token = auth.createToken({}, "kid")
-      const result = auth._verifyToken(token)
+      const token = await auth.createToken({}, "kid")
+      const result = await auth._verifyToken(token)
       expect(result).to.not.be.undefined
     })
   })
@@ -317,30 +326,30 @@ describe("API authorization", function() {
   })
 
   describe("createToken", function() {
-    const secret = Buffer.from("sUpEr SecReT!1!").toString("base64")
+    const secret = Buffer.from("sUpEr SecReT!1!")
     beforeEach(function() {
-      sinon.stub(auth, "_buildKeystore").returns({ default: secret })
+      sinon.stub(auth, "_buildKeystore").returns({ kid: secret })
     })
 
     afterEach(function() {
       auth._buildKeystore.restore()
     })
 
-    it("fails if buildKeystore fails", function() {
+    it("fails if buildKeystore fails", async function() {
       auth._buildKeystore.restore()
       sinon.stub(auth, "_buildKeystore").throws()
 
-      expect(auth.createToken).to.throw()
+      expectRejection(auth.createToken())
     })
 
-    it("creates a token with given payload", function() {
+    it("creates a token with given payload", async function() {
       const payload = { a: 1 }
-      const token = auth.createToken(payload)
+      const token = await auth.createToken(payload)
       const decoded = jwt.decode(token)
       expect(decoded).to.include(payload)
     })
-    it("creates a token signed with given kid", function() {
-      const token = auth.createToken({}, "kid")
+    it("creates a token signed with given kid", async function() {
+      const token = await auth.createToken({}, "kid")
       const decoded = jwt.decode(token, { complete: true })
       expect(decoded.header.kid).to.equal("kid")
     })

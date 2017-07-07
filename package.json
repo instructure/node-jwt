@@ -36,6 +36,7 @@
   "author": "Xander Moffatt, Andrew Huff",
   "license": "ISC",
   "dependencies": {
+    "consul": "^0.29.0",
     "jsonwebtoken": "^7.4.1"
   },
   "devDependencies": {
