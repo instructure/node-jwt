@@ -27,6 +27,9 @@ set, `auth.required()` returns true iff `NODE_ENV === 'production'`)
 
 ## Usage
 
+Set the `AUTH_SECRET` environment variable; e.g. with
+`AUTH_SECRET="kid:secret" node myfancyapp.js`
+
 ```js
 var auth = require('inst-node-jwt')
 
@@ -117,3 +120,24 @@ console.log(auth._buildKeystore())
 using the key that matchs the `kid`, if there is one. If that fails, it will
 verify using the `default` key. Otherwise, it will try using every key in the
 keystore to verify.
+
+### Signing
+
+`inst-node-jwt` can also sign tokens, e.g. for testing purposes.
+
+```js
+var auth = require('inst-node-jwt')
+
+process.env.AUTH_SECRET = "<base64-secret> othersecret:<base64-other-secret>"
+var token1 = auth.createToken({foo: "bar"})
+var payload1 = auth._verifyToken(token1)
+console.log(payload1)
+// prints:
+//   { "foo": "bar" }
+
+var token2 = auth.createToken({bar: "baz"}, "othersecret")
+var payload2 = auth._verifyToken(token2)
+console.log(payload2)
+// prints:
+//   { "bar": "baz" }
+```

@@ -137,11 +137,6 @@ describe("API authorization", function() {
     })
   })
 
-  describe("_createToken", function() {
-    it("fails if buildKeystore fails")
-    it("creates a token")
-  })
-
   describe("_verifyToken", function() {
     it("returns the JWT payload")
     it("uses the default secret if no kid is given")
@@ -279,5 +274,10 @@ describe("API authorization", function() {
       auth.errorHandler(error, request, response, next)
       expect(next).not.to.be.called
     })
+  })
+
+  describe("createToken", function() {
+    it("fails if buildKeystore fails")
+    it("creates a token")
   })
 })

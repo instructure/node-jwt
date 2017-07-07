@@ -1,5 +1,5 @@
 {
-  "name": "node-jwt",
+  "name": "inst-node-jwt",
   "version": "0.0.1",
   "description": "express JWT middleware",
   "main": "src/auth.js",

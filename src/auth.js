@@ -1,15 +1,6 @@
 const util = require("util")
 const jwt = require("jsonwebtoken")
 
-exports._maxAge = function _maxAge() {
-  return process.env.MAX_JWT_AGE || "5s"
-}
-
-exports._deny = function _deny(response, errors) {
-  response.status(401)
-  response.json({ errors })
-}
-
 exports.UnauthorizedError = function UnauthorizedError(...args) {
   let error, message
   if (args.length > 1) {
@@ -28,6 +19,19 @@ exports.UnauthorizedError = function UnauthorizedError(...args) {
 }
 util.inherits(exports.UnauthorizedError, Error)
 
+//
+// private methods
+//
+
+exports._maxAge = function _maxAge() {
+  return process.env.MAX_JWT_AGE || "5s"
+}
+
+exports._deny = function _deny(response, errors) {
+  response.status(401)
+  response.json({ errors })
+}
+
 exports._buildKeystore = function _buildKeystore() {
   if (process.env.AUTH_SECRET) {
     const keys = process.env.AUTH_SECRET.split(/\s+/)
@@ -44,7 +48,7 @@ exports._buildKeystore = function _buildKeystore() {
           return undefined
         }
       })
-      // flattens from [{a:1}, {b:2}] to {a:1, b:2}
+      // flattens from [{a:1}, undefined, {b:2}] to {a:1, b:2}
       return Object.assign({}, ...keystore)
     }
   }
@@ -67,17 +71,6 @@ exports._getToken = function _getToken(req) {
     )
   }
   throw new exports.UnauthorizedError("No authorization token was found")
-}
-
-exports._createToken = function _createToken(payload, kid) {
-  try {
-    const keystore = exports._buildKeystore()
-    const key =
-      keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]]
-    return jwt.sign(payload, key, { header: { kid } })
-  } catch (err) {
-    throw new exports.UnauthorizedError(err, "Token signing failed")
-  }
 }
 
 exports._verifyToken = function _verifyToken(token) {
@@ -117,7 +110,9 @@ exports._verifyToken = function _verifyToken(token) {
         if (keystore.hasOwnProperty(kid) && kid !== "default") {
           try {
             return [undefined, jwt.verify(token, keystore[kid], options)]
-          } catch (err) {} //eslint-disable-line no-empty
+          } catch (err) {
+            // ignore key that doesn't work and move on to the next one
+          }
         }
       }
       return ["all verification failed", undefined]
@@ -140,6 +135,10 @@ exports._verifyToken = function _verifyToken(token) {
   return payload
 }
 
+//
+// public methods
+//
+
 exports.required = function required() {
   return (
     process.env.NODE_ENV === "production" || process.env.REQUIRE_AUTH === "true"
@@ -161,5 +160,16 @@ exports.errorHandler = function errorHandler(err, req, res, next) {
     exports._deny(res, err)
   } else {
     next(err)
+  }
+}
+
+exports.createToken = function createToken(payload, kid) {
+  try {
+    const keystore = exports._buildKeystore()
+    const key =
+      keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]]
+    return jwt.sign(payload, key, { header: { kid, algorithm: "HS256" } })
+  } catch (err) {
+    throw new exports.UnauthorizedError(err, "Token signing failed")
   }
 }
