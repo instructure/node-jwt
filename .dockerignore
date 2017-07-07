@@ -1,0 +1,12 @@
+# Ignore Docker related files
+Dockerfile
+.dockerignore
+docker-compose.*
+
+# Ignore Git
+.git
+.gitignore
+
+# Ignore build things
+node_modules
+build.sh
