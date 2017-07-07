@@ -1,0 +1,51 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 8,
+    "sourceType": "module"
+  },
+  "env": {
+    "browser": false,
+    "node": true,
+    "mocha": true,
+    "es6": true
+  },
+  "globals": {
+    "Promise": false
+  },
+  "extends": [
+    "eslint:recommended"
+  ],
+  "plugins": [
+    "mocha",
+    "promise"
+  ],
+  "rules": {
+    "array-callback-return": "error",
+    "consistent-return": "error",
+    "eqeqeq": "error",
+    "guard-for-in": "error",
+    "mocha/handle-done-callback": "error",
+    "mocha/no-exclusive-tests": "error",
+    "mocha/no-global-tests": "error",
+    "mocha/no-pending-tests": "off",
+    "mocha/no-nested-tests": "error",
+    "mocha/no-skipped-tests": "off",
+    "mocha/no-synchronous-tests": "off",
+    "promise/param-names": "error",
+    "promise/always-return": "error",
+    "promise/catch-or-return": "error",
+    "promise/no-native": "error",
+    "no-extra-semi": "off",
+    "no-param-reassign": "error",
+    "no-var": "error",
+    "no-eval": "error",
+    "no-shadow": "error",
+    "no-shadow-restricted-names": "error",
+    "no-template-curly-in-string": "error",
+    "prefer-const": "error",
+    "prefer-rest-params": "error",
+    "prefer-template": "error",
+    "strict": "error",
+    "no-unused-vars": ["error", {"varsIgnorePattern": "^_$", "args": "none"} ]
+  }
+}

@@ -14,17 +14,15 @@
       "src/**/*.js"
     ],
     "exclude": [
-      "src/test/**/*.js"
-    ],
-    "sourceMap": false,
-    "instrument": false
+      "test/**/*.js"
+    ]
   },
   "scripts": {
     "coverage:check": "cross-env NODE_ENV=test nyc check-coverage",
-    "coverage:run": "cross-env NODE_ENV=test nyc mocha 'src/test/**/*.js'",
-    "lint:check": "eslint src/ scripts/ && prettier --no-semi --trailing-comma es5 --list-different \"src/**/*.js\" \"scripts/**/*.js\"",
-    "lint:fix": "eslint --fix src/ scripts/ && prettier --no-semi --trailing-comma es5 --write \"src/**/*.js\" \"scripts/**/*.js\"",
-    "test": "NODE_ENV=test mocha 'src/test/**/*.js'"
+    "coverage:run": "cross-env NODE_ENV=test nyc mocha 'test/**/*.js'",
+    "lint:check": "eslint src/ test/ && prettier --no-semi --trailing-comma es5 --list-different 'src/**/*.js' 'test/**/*.js'",
+    "lint:fix": "eslint --fix src/ test/ && prettier --no-semi --trailing-comma es5 --write 'src/**/*.js' 'test/**/*.js'",
+    "test": "NODE_ENV=test mocha 'test/**/*.js'"
   },
   "repository": {
     "type": "git",
