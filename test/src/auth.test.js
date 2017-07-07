@@ -96,10 +96,6 @@ describe("API authorization", function() {
         })
       })
     })
-
-    describe("from consul", function() {
-      it("todo")
-    })
   })
 
   describe("_deny", function() {
@@ -138,9 +134,44 @@ describe("API authorization", function() {
   })
 
   describe("_verifyToken", function() {
-    it("returns the JWT payload")
-    it("uses the default secret if no kid is given")
-    it("tries all secrets if no default or kid")
+    const secret = Buffer.from("sUpEr SecReT!1!").toString("base64")
+
+    afterEach(function() {
+      auth._buildKeystore.restore()
+    })
+
+    it("returns the JWT payload", function() {
+      sinon.stub(auth, "_buildKeystore").returns({ default: secret })
+
+      const payload = { a: 1 }
+      const token = auth.createToken(payload)
+      const result = auth._verifyToken(token)
+      expect(result).to.include(payload)
+    })
+
+    it("uses secret with kid if kid is included in header", function() {
+      sinon.stub(auth, "_buildKeystore").returns({ kid: secret })
+
+      const token = auth.createToken({}, "kid")
+      const result = auth._verifyToken(token)
+      expect(result).to.not.be.undefined
+    })
+
+    it("tries all secrets if no default or kid", function() {
+      sinon.stub(auth, "_buildKeystore").returns({ other: secret })
+
+      const token = auth.createToken({})
+      const result = auth._verifyToken(token)
+      expect(result).to.not.be.undefined
+    })
+
+    it("verifies if given kid doesn't exist", function() {
+      sinon.stub(auth, "_buildKeystore").returns({ default: secret })
+
+      const token = auth.createToken({}, "kid")
+      const result = auth._verifyToken(token)
+      expect(result).to.not.be.undefined
+    })
   })
 
   describe("_getToken", function() {
@@ -277,7 +308,32 @@ describe("API authorization", function() {
   })
 
   describe("createToken", function() {
-    it("fails if buildKeystore fails")
-    it("creates a token")
+    const secret = Buffer.from("sUpEr SecReT!1!").toString("base64")
+    beforeEach(function() {
+      sinon.stub(auth, "_buildKeystore").returns({ default: secret })
+    })
+
+    afterEach(function() {
+      auth._buildKeystore.restore()
+    })
+
+    it("fails if buildKeystore fails", function() {
+      auth._buildKeystore.restore()
+      sinon.stub(auth, "_buildKeystore").throws()
+
+      expect(auth.createToken).to.throw()
+    })
+
+    it("creates a token with given payload", function() {
+      const payload = { a: 1 }
+      const token = auth.createToken(payload)
+      const decoded = jwt.decode(token)
+      expect(decoded).to.include(payload)
+    })
+    it("creates a token signed with given kid", function() {
+      const token = auth.createToken({}, "kid")
+      const decoded = jwt.decode(token, { complete: true })
+      expect(decoded.header.kid).to.equal("kid")
+    })
   })
 })
