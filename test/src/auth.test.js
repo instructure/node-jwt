@@ -60,39 +60,46 @@ describe("API authorization", function() {
       })
 
       it("extracts default secret", function() {
-        const secret = Buffer.from("sUpEr SecReT!1!").toString("base64")
+        const buffer = Buffer.from("sUpEr SecReT!1!")
+        const secret = buffer.toString("base64")
         process.env.AUTH_SECRET = secret
         expect(auth._buildKeystore()).to.deep.equal({
-          default: secret,
+          default: buffer,
         })
       })
 
       it("extracts keyed secrets", function() {
-        const s1 = Buffer.from("secret1").toString("base64")
-        const s2 = Buffer.from("secret2").toString("base64")
+        const b1 = Buffer.from("secret1")
+        const b2 = Buffer.from("secret2")
+        const s1 = b1.toString("base64")
+        const s2 = b2.toString("base64")
         process.env.AUTH_SECRET = `secret1:${s1} secret2:${s2}`
         expect(auth._buildKeystore()).to.deep.equal({
-          secret1: s1,
-          secret2: s2,
+          secret1: b1,
+          secret2: b2,
         })
       })
 
       it("extracts default + keyed secrets", function() {
-        const s1 = Buffer.from("secret1").toString("base64")
-        const s2 = Buffer.from("secret2").toString("base64")
+        const b1 = Buffer.from("secret1")
+        const b2 = Buffer.from("secret2")
+        const s1 = b1.toString("base64")
+        const s2 = b2.toString("base64")
         process.env.AUTH_SECRET = `${s1} secret2:${s2}`
         expect(auth._buildKeystore()).to.deep.equal({
-          default: s1,
-          secret2: s2,
+          default: b1,
+          secret2: b2,
         })
       })
 
       it("only extracts a single default secret", function() {
-        const s1 = Buffer.from("secret1").toString("base64")
-        const s2 = Buffer.from("secret2").toString("base64")
+        const b1 = Buffer.from("secret1")
+        const b2 = Buffer.from("secret2")
+        const s1 = b1.toString("base64")
+        const s2 = b2.toString("base64")
         process.env.AUTH_SECRET = `${s1} ${s2}`
         expect(auth._buildKeystore()).to.deep.equal({
-          default: s2,
+          default: b2,
         })
       })
     })
@@ -134,7 +141,7 @@ describe("API authorization", function() {
   })
 
   describe("_verifyToken", function() {
-    const secret = Buffer.from("sUpEr SecReT!1!").toString("base64")
+    const secret = Buffer.from("sUpEr SecReT!1!")
 
     afterEach(function() {
       auth._buildKeystore.restore()
@@ -204,7 +211,7 @@ describe("API authorization", function() {
     beforeEach(function() {
       sinon
         .stub(auth, "_buildKeystore")
-        .returns({ default: Buffer.from(secret).toString("base64") })
+        .returns({ default: Buffer.from(secret) })
       token = jwt.sign({}, secret)
       request = { headers: {}, query: {} }
     })

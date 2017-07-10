@@ -40,10 +40,10 @@ exports._buildKeystore = function _buildKeystore() {
         const parts = key.split(":")
         if (parts.length === 1) {
           const [value] = parts
-          return { default: value }
+          return { default: Buffer.from(value, "base64") }
         } else if (parts.length === 2) {
           const [kid, value] = parts
-          return { [kid]: value }
+          return { [kid]: Buffer.from(value, "base64") }
         } else {
           return undefined
         }
@@ -87,10 +87,7 @@ exports._verifyToken = function _verifyToken(token) {
           const kid = decoded.header.kid
           const key = keystore[kid]
           if (key) {
-            return [
-              undefined,
-              jwt.verify(token, Buffer.from(key, "base64"), options),
-            ]
+            return [undefined, jwt.verify(token, key, options)]
           }
         }
         return ["kid verification failed", undefined]
@@ -101,10 +98,7 @@ exports._verifyToken = function _verifyToken(token) {
     function verifyWithDefault() {
       try {
         if (keystore.default) {
-          return [
-            undefined,
-            jwt.verify(token, Buffer.from(keystore.default, "base64"), options),
-          ]
+          return [undefined, jwt.verify(token, keystore.default, options)]
         }
         return ["default verification failed", undefined]
       } catch (err) {
@@ -115,10 +109,7 @@ exports._verifyToken = function _verifyToken(token) {
       for (const kid in keystore) {
         if (keystore.hasOwnProperty(kid) && kid !== "default") {
           try {
-            return [
-              undefined,
-              jwt.verify(token, Buffer.from(keystore[kid], "base64"), options),
-            ]
+            return [undefined, jwt.verify(token, keystore[kid], options)]
           } catch (err) {
             // ignore key that doesn't work and move on to the next one
           }
@@ -177,8 +168,9 @@ exports.createToken = function createToken(payload, kid) {
     const keystore = exports._buildKeystore()
     const key =
       keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]]
-    const dkey = Buffer.from(key, "base64").toString("utf8")
-    return jwt.sign(payload, dkey, { header: { kid, algorithm: "HS256" } })
+    return jwt.sign(payload, key, {
+      header: { kid, algorithm: "HS256" },
+    })
   } catch (err) {
     throw new exports.UnauthorizedError(err, "Token signing failed")
   }
