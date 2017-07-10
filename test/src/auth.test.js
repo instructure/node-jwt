@@ -198,11 +198,13 @@ describe("API authorization", function() {
   })
 
   describe("middleware", function() {
-    const secret = Buffer.from("sUpEr SecReT!1!").toString("base64")
+    const secret = "sUpEr SecReT!1!"
     const response = { locals: {} }
     let request, token
     beforeEach(function() {
-      sinon.stub(auth, "_buildKeystore").returns({ default: secret })
+      sinon
+        .stub(auth, "_buildKeystore")
+        .returns({ default: Buffer.from(secret).toString("base64") })
       token = jwt.sign({}, secret)
       request = { headers: {}, query: {} }
     })

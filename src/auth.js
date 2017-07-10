@@ -87,7 +87,10 @@ exports._verifyToken = function _verifyToken(token) {
           const kid = decoded.header.kid
           const key = keystore[kid]
           if (key) {
-            return [undefined, jwt.verify(token, key, options)]
+            return [
+              undefined,
+              jwt.verify(token, Buffer.from(key, "base64"), options),
+            ]
           }
         }
         return ["kid verification failed", undefined]
@@ -98,7 +101,10 @@ exports._verifyToken = function _verifyToken(token) {
     function verifyWithDefault() {
       try {
         if (keystore.default) {
-          return [undefined, jwt.verify(token, keystore.default, options)]
+          return [
+            undefined,
+            jwt.verify(token, Buffer.from(keystore.default, "base64"), options),
+          ]
         }
         return ["default verification failed", undefined]
       } catch (err) {
@@ -109,7 +115,10 @@ exports._verifyToken = function _verifyToken(token) {
       for (const kid in keystore) {
         if (keystore.hasOwnProperty(kid) && kid !== "default") {
           try {
-            return [undefined, jwt.verify(token, keystore[kid], options)]
+            return [
+              undefined,
+              jwt.verify(token, Buffer.from(keystore[kid], "base64"), options),
+            ]
           } catch (err) {
             // ignore key that doesn't work and move on to the next one
           }
@@ -168,7 +177,8 @@ exports.createToken = function createToken(payload, kid) {
     const keystore = exports._buildKeystore()
     const key =
       keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]]
-    return jwt.sign(payload, key, { header: { kid, algorithm: "HS256" } })
+    const dkey = Buffer.from(key, "base64").toString("utf8")
+    return jwt.sign(payload, dkey, { header: { kid, algorithm: "HS256" } })
   } catch (err) {
     throw new exports.UnauthorizedError(err, "Token signing failed")
   }

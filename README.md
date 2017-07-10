@@ -93,7 +93,10 @@ console.log(auth._buildKeystore())
 The `kid`, or key id, is included in the `header` section of a JWT is an easy
 way of identifying which secret was used to sign that JWT.
 
-The key value is the base64-encoded secret.
+The key value is the base64-encoded secret. Note that `inst-node-jwt` will sign and
+verify JWTs by decoded that secret using base64 and use the original random bytes.
+This is based on `jsonwebtoken`'s behavior, outlined [here]
+(https://github.com/auth0/node-jsonwebtoken/issues/208#issuecomment-231861138)
 
 A secret that has no `kid:` is known as the `default` key. There can only be one
 `default` key; all other keys without `kid`s will be ignored.
