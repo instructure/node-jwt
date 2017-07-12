@@ -1,24 +1,6 @@
-const util = require("util")
 const jwt = require("jsonwebtoken")
-const consul = require("./consul")
-
-exports.UnauthorizedError = function UnauthorizedError(...args) {
-  let error, message
-  if (args.length > 1) {
-    ;[error, message] = args
-  } else {
-    ;[message] = args
-  }
-
-  this.name = this.constructor.name
-  this.message = message
-  if (error && error.message) {
-    this.JWTError = error.message
-  }
-  Error.call(this)
-  Error.captureStackTrace(this, this.constructor)
-}
-util.inherits(exports.UnauthorizedError, Error)
+const keystoreBuilders = require("./keystoreBuilders")
+const UnauthorizedError = require("./unauthorizedError")
 
 //
 // private methods
@@ -33,34 +15,6 @@ exports._deny = function _deny(response, errors) {
   response.json({ errors })
 }
 
-exports._buildKeystore = async function _buildKeystore() {
-  let consulKeystore = [],
-    envKeystore = []
-  if (process.env.CONSUL_JWT_SECRET_PREFIX) {
-    consulKeystore = await consul.getSigningSecrets()
-  }
-  if (process.env.AUTH_SECRET) {
-    const keys = process.env.AUTH_SECRET.split(/\s+/)
-    envKeystore = keys.map(key => {
-      const parts = key.split(":")
-      if (parts.length === 1) {
-        const [value] = parts
-        return { default: Buffer.from(value, "base64") }
-      } else if (parts.length === 2) {
-        const [kid, value] = parts
-        return { [kid]: Buffer.from(value, "base64") }
-      } else {
-        return undefined
-      }
-    })
-  }
-  if (consulKeystore || envKeystore) {
-    // flattens from [{a:1}, undefined, {b:2}] to {a:1, b:2}
-    return Object.assign({}, ...consulKeystore, ...envKeystore)
-  }
-  throw new exports.UnauthorizedError("auth secrets unavailable")
-}
-
 exports._getToken = function _getToken(req) {
   if (req.query && req.query.token) {
     return req.query.token
@@ -72,15 +26,22 @@ exports._getToken = function _getToken(req) {
         return credentials
       }
     }
-    throw new exports.UnauthorizedError(
-      "Format is Authorization: Bearer [token]"
-    )
+    throw new UnauthorizedError("Format is Authorization: Bearer [token]")
   }
-  throw new exports.UnauthorizedError("No authorization token was found")
+  throw new UnauthorizedError("No authorization token was found")
 }
 
-exports._verifyToken = async function _verifyToken(token) {
-  const keystore = await exports._buildKeystore()
+//
+// public methods
+//
+
+exports.keystoreBuilders = keystoreBuilders
+
+exports.verifyToken = async function verifyToken(
+  token,
+  { keystoreBuilder } = { keystoreBuilder: keystoreBuilders.fromEnv }
+) {
+  const keystore = await keystoreBuilder()
   const options = {
     maxAge: exports._maxAge(),
     algorithms: ["HS256"],
@@ -130,20 +91,16 @@ exports._verifyToken = async function _verifyToken(token) {
     ;[error, payload] = verifier()
     // Error "invalid signature" means key didn't match - continue checking
     if (error && error.message && error.message !== "invalid signature") {
-      throw new exports.UnauthorizedError(error, "Verification Error")
+      throw new UnauthorizedError(error, "Verification Error")
     }
     if (payload) break
   }
 
   if (!payload) {
-    throw new exports.UnauthorizedError("Verification Error: No matching keys")
+    throw new UnauthorizedError("Verification Error: No matching keys")
   }
   return payload
 }
-
-//
-// public methods
-//
 
 exports.required = function required() {
   return (
@@ -151,13 +108,17 @@ exports.required = function required() {
   )
 }
 
-exports.middleware = async function middleware(req, res, next) {
-  try {
-    const token = exports._getToken(req)
-    res.locals.payload = await exports._verifyToken(token)
-    next()
-  } catch (err) {
-    next(err)
+exports.buildMiddleware = function buildMiddleware(
+  { keystoreBuilder } = { keystoreBuilder: keystoreBuilders.fromEnv }
+) {
+  return async function _authMiddleware(req, res, next) {
+    try {
+      const token = exports._getToken(req)
+      res.locals.payload = await exports.verifyToken(token, { keystoreBuilder })
+      next()
+    } catch (err) {
+      next(err)
+    }
   }
 }
 
@@ -169,18 +130,17 @@ exports.errorHandler = function errorHandler(err, req, res, next) {
   }
 }
 
-exports.createToken = async function createToken(payload, kid) {
+exports.createToken = async function createToken(
+  payload,
+  { kid, keystoreBuilder } = { keystoreBuilder: keystoreBuilders.fromEnv }
+) {
   try {
-    const keystore = await exports._buildKeystore()
+    const keystore = await keystoreBuilder()
     const key =
       keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]]
     const signingKid = Object.keys(keystore).find(k => keystore[k] === key)
     return jwt.sign(payload, key, { header: { kid: signingKid } })
   } catch (err) {
-    throw new exports.UnauthorizedError(err, "Token signing failed")
+    throw new UnauthorizedError(err, "Token signing failed")
   }
-}
-
-exports.bootstrapConsul = async function bootstrapConsul() {
-  await consul.bootstrap()
 }

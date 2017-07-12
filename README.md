@@ -79,15 +79,18 @@ environment variable). Each secret consists of a `kid` and a key value,
 separated by a `:`.
 
 ```js
-var auth = require('inst-node-jwt')
+const auth = require('inst-node-jwt')
 
-process.env.AUTH_SECRET = "secret1:<base64-secret> secret2:<base64-other-secret>"
-console.log(auth._buildKeystore())
-// prints:
-//   {
-//     secret1: "<base64-secret>",
-//     secret2: "<base64-other-secret>"
-//   }
+(async () => {
+  const s1 = Buffer.from("secret1").toString("base64")
+  const s2 = Buffer.from("secret2").toString("base64")
+  process.env.AUTH_SECRET = `secret1:${s1} secret2:${s2}`
+
+  const keystore = await auth.keystoreBuilders.fromEnv()
+
+  console.log(keystore.secret1.toString()) // secret1
+  console.log(keystore.secret2.toString()) // secret2
+})()
 ```
 
 The `kid`, or key id, is included in the `header` section of a JWT is an easy
@@ -103,16 +106,20 @@ A secret that has no `kid:` is known as the `default` key. There can only be one
 
 
 ```js
-var auth = require('inst-node-jwt')
+const auth = require('inst-node-jwt')
 
-process.env.AUTH_SECRET = "secret1:<base64-secret> <base64-second-secret> <base64-third-secret>"
-console.log(auth._buildKeystore())
-// prints:
-//   {
-//     secret1: "<base64-secret>",
-//     default: "<base64-third-secret>"
-//   }
-// Notice there is no <base64-second-secret>
+(async () => {
+  const s1 = Buffer.from("secret1").toString("base64")
+  const s2 = Buffer.from("secret2").toString("base64")
+  const s3 = Buffer.from("secret3").toString("base64")
+  process.env.AUTH_SECRET = `secret1:${s1} ${s2} ${s3}`
+
+  const keystore = await auth.keystoreBuilders.fromEnv()
+
+  console.log(keystore.secret1.toString()) // secret1
+  // Notice that secret2 has been overridden
+  console.log(keystore.default.toString()) // secret3
+})()
 ```
 
 
@@ -129,18 +136,19 @@ keystore to verify.
 `inst-node-jwt` can also sign tokens, e.g. for testing purposes.
 
 ```js
-var auth = require('inst-node-jwt')
+const auth = require('inst-node-jwt')
 
-process.env.AUTH_SECRET = "<base64-secret> othersecret:<base64-other-secret>"
-var token1 = auth.createToken({foo: "bar"})
-var payload1 = auth._verifyToken(token1)
-console.log(payload1)
-// prints:
-//   { "foo": "bar" }
+(async () => {
+  const s1 = Buffer.from("secret1").toString("base64")
+  const s2 = Buffer.from("secret2").toString("base64")
+  process.env.AUTH_SECRET = `${s1} secret2:${s2}`
 
-var token2 = auth.createToken({bar: "baz"}, "othersecret")
-var payload2 = auth._verifyToken(token2)
-console.log(payload2)
-// prints:
-//   { "bar": "baz" }
+  const token1 = await auth.createToken({foo: "bar"})
+  const payload1 = await auth.verifyToken(token1)
+  console.log(payload1) // { "foo": "bar" }
+
+  const token2 = await auth.createToken({bar: "baz"}, "secret2")
+  const payload2 = await auth.verifyToken(token2)
+  console.log(payload2) // { "bar": "baz" }
+})()
 ```
