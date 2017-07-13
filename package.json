@@ -37,7 +37,8 @@
   "license": "ISC",
   "dependencies": {
     "consul": "^0.29.0",
-    "jsonwebtoken": "^7.4.1"
+    "jsonwebtoken": "^7.4.1",
+    "lodash.mapvalues": "^4.6.0"
   },
   "devDependencies": {
     "chai": "^4.0.2",

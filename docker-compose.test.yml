@@ -2,5 +2,17 @@ version: '2'
 services:
   app:
     build: .
+    links:
+      - consul
     environment:
       NODE_ENV: test
+      CONSUL_HOST: "consul"
+      CONSUL_PORT: "8500"
+      CONSUL_JWT_SECRET_PREFIX: "config/test/secrets"
+
+  consul:
+    image: gliderlabs/consul-server:0.6
+    command: -node canvas-consul -dc canvas -bootstrap-expect 1
+    environment:
+      GOMAXPROCS: "2"
+      VIRTUAL_PORT: 8500

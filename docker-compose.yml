@@ -5,8 +5,20 @@ services:
     volumes:
       - .:/usr/src/app
       - node_modules:/usr/src/app/node_modules
+    links:
+      - consul
     environment:
       NODE_ENV: development
+      CONSUL_HOST: "consul"
+      CONSUL_PORT: "8500"
+      CONSUL_JWT_SECRET_PREFIX: "config/development/secrets"
+
+  consul:
+    image: gliderlabs/consul-server:0.6
+    command: -node canvas-consul -dc canvas -bootstrap-expect 1
+    environment:
+      GOMAXPROCS: "2"
+      VIRTUAL_PORT: 8500
 
 volumes:
   node_modules:
