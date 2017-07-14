@@ -112,7 +112,7 @@ exports.required = function required() {
 }
 
 exports.buildMiddleware = function buildMiddleware(options) {
-  const { keystoreBuilder } = Object.assign(
+  const { keystoreBuilder, payloadValidator } = Object.assign(
     {
       keystoreBuilder: keystoreBuilders.fromMany,
     },
@@ -121,7 +121,8 @@ exports.buildMiddleware = function buildMiddleware(options) {
   return async function _authMiddleware(req, res, next) {
     try {
       const token = exports.extractToken(req)
-      res.locals.payload = await exports.verifyToken(token, { keystoreBuilder })
+      const payload = await exports.verifyToken(token, { keystoreBuilder })
+      if (payloadValidator !== undefined) payloadValidator(payload)
       next()
     } catch (err) {
       next(err)

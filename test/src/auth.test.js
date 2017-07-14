@@ -148,14 +148,14 @@ describe("API authorization", function() {
     })
   })
 
-  describe("middleware", function() {
+  describe("buildMiddleware", function() {
     const secret = "sUpEr SecReT!1!"
     const response = { locals: {} }
+    const keystoreBuilder = () => {
+      return { default: Buffer.from(secret) }
+    }
     let request, token, middleware
     beforeEach(function() {
-      const keystoreBuilder = () => {
-        return { default: Buffer.from(secret) }
-      }
       middleware = auth.buildMiddleware({ keystoreBuilder })
       token = jwt.sign({}, secret)
       request = { headers: {}, query: {} }
@@ -220,6 +220,33 @@ describe("API authorization", function() {
     it("accepts a valid token signed with secret", function(done) {
       request.query.token = token
       middleware(request, response, done)
+    })
+
+    describe("payloadValidator", function() {
+      function payloadValidator(payload) {
+        if (!payload.isValid) throw new Error("not today")
+      }
+
+      beforeEach(() => {
+        middleware = auth.buildMiddleware({ keystoreBuilder, payloadValidator })
+      })
+
+      it("rejects valid JWTs that fail payloadValidator", function(done) {
+        token = jwt.sign({ isValid: false }, secret)
+        request.query.token = token
+
+        middleware(request, response, err => {
+          expect(err.message).to.equal("not today")
+          done()
+        })
+      })
+
+      it("accepts JWTs that pass payloadValidator", function(done) {
+        token = jwt.sign({ isValid: true }, secret)
+        request.query.token = token
+
+        middleware(request, response, done)
+      })
     })
   })
 
