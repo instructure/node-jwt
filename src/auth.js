@@ -6,16 +6,22 @@ const UnauthorizedError = require("./unauthorizedError")
 // private methods
 //
 
-exports._maxAge = function _maxAge() {
+function _maxAge() {
   return process.env.MAX_JWT_AGE || "5s"
 }
 
-exports._deny = function _deny(response, errors) {
+function _deny(response, errors) {
   response.status(401)
   response.json({ errors })
 }
 
-exports._getToken = function _getToken(req) {
+//
+// public methods
+//
+
+exports.keystoreBuilders = keystoreBuilders
+
+exports.extractToken = function extractToken(req) {
   if (req.query && req.query.token) {
     return req.query.token
   } else if (req.headers && req.headers.authorization) {
@@ -31,12 +37,6 @@ exports._getToken = function _getToken(req) {
   throw new UnauthorizedError("No authorization token was found")
 }
 
-//
-// public methods
-//
-
-exports.keystoreBuilders = keystoreBuilders
-
 exports.verifyToken = async function verifyToken(token, options) {
   const { keystoreBuilder } = Object.assign(
     {
@@ -46,7 +46,7 @@ exports.verifyToken = async function verifyToken(token, options) {
   )
   const keystore = await keystoreBuilder()
   const jwtOptions = {
-    maxAge: exports._maxAge(),
+    maxAge: _maxAge(),
     algorithms: ["HS256"],
   }
   const verifiers = [
@@ -120,7 +120,7 @@ exports.buildMiddleware = function buildMiddleware(options) {
   )
   return async function _authMiddleware(req, res, next) {
     try {
-      const token = exports._getToken(req)
+      const token = exports.extractToken(req)
       res.locals.payload = await exports.verifyToken(token, { keystoreBuilder })
       next()
     } catch (err) {
@@ -131,7 +131,7 @@ exports.buildMiddleware = function buildMiddleware(options) {
 
 exports.errorHandler = function errorHandler(err, req, res, next) {
   if (err.name === "UnauthorizedError") {
-    exports._deny(res, err)
+    _deny(res, err)
   } else {
     next(err)
   }

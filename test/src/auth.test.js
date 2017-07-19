@@ -46,50 +46,43 @@ describe("API authorization", function() {
     })
   })
 
-  describe("_deny", function() {
-    let response
-    beforeEach(() => {
-      response = {
-        status: sinon.spy(),
-        json: sinon.spy(),
-      }
-    })
-
-    it("replies with a 401 status", function() {
-      auth._deny(response, {})
-      expect(response.status).to.be.calledWith(401)
-    })
-
-    it("includes errors in the json body", function() {
-      const errors = { authorization: "invalid" }
-      auth._deny(response, errors)
-      expect(response.json).to.be.calledWith({ errors })
-    })
-  })
-
-  describe("_maxAge", function() {
+  describe("max age", function() {
     stubEnv()
 
-    it("gets value from environment", function() {
-      process.env.MAX_JWT_AGE = "heyyo"
-      expect(auth._maxAge()).to.equal("heyyo")
+    const secret = Buffer.from("sUpEr SecReT!1!").toString("base64")
+    const tenSecondsAgo = +Date.now() / 1000 - 10
+    const payload = { a: 1, iat: tenSecondsAgo }
+
+    it("gets value from environment", async function() {
+      process.env.MAX_JWT_AGE = "30s"
+      process.env.AUTH_SECRET = secret
+
+      const token = await auth.createToken(payload)
+
+      const result = await auth.verifyToken(token)
+      expect(result).to.include(payload)
     })
 
-    it("defaults to 5 seconds", function() {
+    it("defaults to 5 seconds", async function() {
       delete process.env.MAX_JWT_AGE
-      expect(auth._maxAge()).to.equal("5s")
+      process.env.AUTH_SECRET = secret
+
+      const token = await auth.createToken(payload)
+
+      const err = await expectRejection(auth.verifyToken(token))
+      expect(err.name).to.equal("UnauthorizedError")
     })
   })
 
   describe("verifyToken", function() {
     const secret = Buffer.from("sUpEr SecReT!1!")
+    const payload = { a: 1 }
 
     it("returns the JWT payload", async function() {
       const keystoreBuilder = () => {
         return { default: secret }
       }
 
-      const payload = { a: 1 }
       const token = await auth.createToken(payload, { keystoreBuilder })
       const result = await auth.verifyToken(token, { keystoreBuilder })
       expect(result).to.include(payload)
@@ -100,9 +93,12 @@ describe("API authorization", function() {
         return { kid: secret }
       }
 
-      const token = await auth.createToken({}, { kid: "kid", keystoreBuilder })
+      const token = await auth.createToken(payload, {
+        kid: "kid",
+        keystoreBuilder,
+      })
       const result = await auth.verifyToken(token, { keystoreBuilder })
-      expect(result).to.not.be.undefined
+      expect(result).to.include(payload)
     })
 
     it("tries all secrets if no default or kid", async function() {
@@ -110,9 +106,9 @@ describe("API authorization", function() {
         return { other: secret }
       }
 
-      const token = await auth.createToken({}, { keystoreBuilder })
+      const token = await auth.createToken(payload, { keystoreBuilder })
       const result = await auth.verifyToken(token, { keystoreBuilder })
-      expect(result).to.not.be.undefined
+      expect(result).to.include(payload)
     })
 
     it("verifies if given kid doesn't exist", async function() {
@@ -120,13 +116,16 @@ describe("API authorization", function() {
         return { default: secret }
       }
 
-      const token = await auth.createToken({}, { kid: "kid", keystoreBuilder })
+      const token = await auth.createToken(payload, {
+        kid: "kid",
+        keystoreBuilder,
+      })
       const result = await auth.verifyToken(token, { keystoreBuilder })
-      expect(result).to.not.be.undefined
+      expect(result).to.include(payload)
     })
   })
 
-  describe("_getToken", function() {
+  describe("extractToken", function() {
     let request
     beforeEach(function() {
       request = { headers: {}, query: {} }
@@ -134,18 +133,18 @@ describe("API authorization", function() {
 
     it("finds token in authorization header", function() {
       request.headers.authorization = "Bearer token"
-      expect(auth._getToken(request)).to.equal("token")
+      expect(auth.extractToken(request)).to.equal("token")
     })
 
     it("finds token in query string", function() {
       request.query.token = "token"
-      expect(auth._getToken(request)).to.equal("token")
+      expect(auth.extractToken(request)).to.equal("token")
     })
 
     it("prefers token in query string over token in header", function() {
       request.query.token = "correct token"
       request.headers.authorization = "other token"
-      expect(auth._getToken(request)).to.equal("correct token")
+      expect(auth.extractToken(request)).to.equal("correct token")
     })
   })
 
@@ -193,6 +192,7 @@ describe("API authorization", function() {
     it("fails if token doesn't match secret", function(done) {
       request.query.token = jwt.sign({}, "wrong secret oh noes")
       middleware(request, response, err => {
+        expect(err.name).to.equal("UnauthorizedError")
         expect(err.message).to.match(/No matching keys/)
         done()
       })
@@ -219,10 +219,7 @@ describe("API authorization", function() {
 
     it("accepts a valid token signed with secret", function(done) {
       request.query.token = token
-      middleware(request, response, err => {
-        expect(err).to.be.undefined
-        done()
-      })
+      middleware(request, response, done)
     })
   })
 
@@ -266,7 +263,7 @@ describe("API authorization", function() {
         throw new Error("wahhh")
       }
 
-      expectRejection(auth.createToken({ keystoreBuilder }))
+      await expectRejection(auth.createToken({ keystoreBuilder }))
     })
 
     it("creates a token with given payload", async function() {
