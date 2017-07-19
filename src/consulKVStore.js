@@ -10,42 +10,43 @@ const rawDel = promisify(client.kv.del).bind(client.kv)
 const rawSet = promisify(client.kv.set).bind(client.kv)
 const rawGet = promisify(client.kv.get).bind(client.kv)
 
-exports.delAll = async function delAll(
-  { prefix } = {
-    prefix: process.env.CONSUL_JWT_SECRET_PREFIX,
-  }
-) {
-  const options = {
+exports.delAll = async function delAll(options) {
+  const { prefix } = Object.assign(
+    { prefix: process.env.CONSUL_JWT_SECRET_PREFIX },
+    options
+  )
+
+  const consulOptions = {
     key: prefix,
     recurse: true,
   }
-  return await rawDel(options)
+  return await rawDel(consulOptions)
 }
 
-exports.set = async function set(
-  k,
-  v,
-  { prefix } = {
-    prefix: process.env.CONSUL_JWT_SECRET_PREFIX,
-  }
-) {
-  const options = {
+exports.set = async function set(k, v, options) {
+  const { prefix } = Object.assign(
+    { prefix: process.env.CONSUL_JWT_SECRET_PREFIX },
+    options
+  )
+
+  const consulOptions = {
     key: `${prefix}/${k}`,
     value: v,
   }
-  return await rawSet(options)
+  return await rawSet(consulOptions)
 }
 
-exports.getAll = async function getAll(
-  { prefix } = {
-    prefix: process.env.CONSUL_JWT_SECRET_PREFIX,
-  }
-) {
-  const options = {
+exports.getAll = async function getAll(options) {
+  const { prefix } = Object.assign(
+    { prefix: process.env.CONSUL_JWT_SECRET_PREFIX },
+    options
+  )
+
+  const consulOptions = {
     key: prefix,
     recurse: true,
   }
-  const pairs = (await rawGet(options)) || []
+  const pairs = (await rawGet(consulOptions)) || []
   return pairs.map(kv => {
     const key = kv.Key.replace(`${prefix}/`, "")
     return { [key]: kv.Value }

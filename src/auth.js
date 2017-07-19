@@ -37,12 +37,15 @@ exports._getToken = function _getToken(req) {
 
 exports.keystoreBuilders = keystoreBuilders
 
-exports.verifyToken = async function verifyToken(
-  token,
-  { keystoreBuilder } = { keystoreBuilder: keystoreBuilders.fromEnv }
-) {
+exports.verifyToken = async function verifyToken(token, options) {
+  const { keystoreBuilder } = Object.assign(
+    {
+      keystoreBuilder: keystoreBuilders.fromEnv,
+    },
+    options
+  )
   const keystore = await keystoreBuilder()
-  const options = {
+  const jwtOptions = {
     maxAge: exports._maxAge(),
     algorithms: ["HS256"],
   }
@@ -54,7 +57,7 @@ exports.verifyToken = async function verifyToken(
           const kid = decoded.header.kid
           const key = keystore[kid]
           if (key) {
-            return [undefined, jwt.verify(token, key, options)]
+            return [undefined, jwt.verify(token, key, jwtOptions)]
           }
         }
         return ["kid verification failed", undefined]
@@ -65,7 +68,7 @@ exports.verifyToken = async function verifyToken(
     function verifyWithDefault() {
       try {
         if (keystore.default) {
-          return [undefined, jwt.verify(token, keystore.default, options)]
+          return [undefined, jwt.verify(token, keystore.default, jwtOptions)]
         }
         return ["default verification failed", undefined]
       } catch (err) {
@@ -76,7 +79,7 @@ exports.verifyToken = async function verifyToken(
       for (const kid in keystore) {
         if (keystore.hasOwnProperty(kid) && kid !== "default") {
           try {
-            return [undefined, jwt.verify(token, keystore[kid], options)]
+            return [undefined, jwt.verify(token, keystore[kid], jwtOptions)]
           } catch (err) {
             // ignore key that doesn't work and move on to the next one
           }
@@ -108,9 +111,13 @@ exports.required = function required() {
   )
 }
 
-exports.buildMiddleware = function buildMiddleware(
-  { keystoreBuilder } = { keystoreBuilder: keystoreBuilders.fromEnv }
-) {
+exports.buildMiddleware = function buildMiddleware(options) {
+  const { keystoreBuilder } = Object.assign(
+    {
+      keystoreBuilder: keystoreBuilders.fromEnv,
+    },
+    options
+  )
   return async function _authMiddleware(req, res, next) {
     try {
       const token = exports._getToken(req)
@@ -130,10 +137,13 @@ exports.errorHandler = function errorHandler(err, req, res, next) {
   }
 }
 
-exports.createToken = async function createToken(
-  payload,
-  { kid, keystoreBuilder } = { keystoreBuilder: keystoreBuilders.fromEnv }
-) {
+exports.createToken = async function createToken(payload, options) {
+  const { kid, keystoreBuilder } = Object.assign(
+    {
+      keystoreBuilder: keystoreBuilders.fromEnv,
+    },
+    options
+  )
   try {
     const keystore = await keystoreBuilder()
     const key =
