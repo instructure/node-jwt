@@ -53,7 +53,7 @@ Authorization: Bearer <jwt-here>
 
 It prefers the query string over the header.
 
-If the token is valid, `res.locals.payload` will be set with the token's payload.
+If the token is valid, `res.locals.JWTPayload` will be set with the token's payload.
 
 ---
 
