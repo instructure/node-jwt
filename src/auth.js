@@ -40,7 +40,7 @@ exports.keystoreBuilders = keystoreBuilders
 exports.verifyToken = async function verifyToken(token, options) {
   const { keystoreBuilder } = Object.assign(
     {
-      keystoreBuilder: keystoreBuilders.fromEnv,
+      keystoreBuilder: keystoreBuilders.fromMany,
     },
     options
   )
@@ -114,7 +114,7 @@ exports.required = function required() {
 exports.buildMiddleware = function buildMiddleware(options) {
   const { keystoreBuilder } = Object.assign(
     {
-      keystoreBuilder: keystoreBuilders.fromEnv,
+      keystoreBuilder: keystoreBuilders.fromMany,
     },
     options
   )
@@ -140,7 +140,7 @@ exports.errorHandler = function errorHandler(err, req, res, next) {
 exports.createToken = async function createToken(payload, options) {
   const { kid, keystoreBuilder } = Object.assign(
     {
-      keystoreBuilder: keystoreBuilders.fromEnv,
+      keystoreBuilder: keystoreBuilders.fromMany,
     },
     options
   )
