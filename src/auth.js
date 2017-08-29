@@ -34,7 +34,7 @@ exports.extractToken = function extractToken(req) {
     }
     throw new UnauthorizedError("Format is Authorization: Bearer [token]")
   }
-  throw new UnauthorizedError("No authorization token was found")
+  return null
 }
 
 exports.verifyToken = async function verifyToken(token, options) {
@@ -112,18 +112,26 @@ exports.required = function required() {
 }
 
 exports.buildMiddleware = function buildMiddleware(options) {
-  const { keystoreBuilder } = Object.assign(
+  const { keystoreBuilder, isRequired } = Object.assign(
     {
       keystoreBuilder: keystoreBuilders.fromMany,
+      isRequired: exports.required(),
     },
     options
   )
   return async function _authMiddleware(req, res, next) {
     try {
       const token = exports.extractToken(req)
-      res.locals.JWTPayload = await exports.verifyToken(token, {
-        keystoreBuilder,
-      })
+      if (token) {
+        res.locals.JWTPayload = jwt.decode(token)
+        if (isRequired) {
+          await exports.verifyToken(token, {
+            keystoreBuilder,
+          })
+        }
+      } else if (isRequired) {
+        throw new UnauthorizedError("JWT is required")
+      }
       next()
     } catch (err) {
       next(err)

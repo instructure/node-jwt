@@ -131,6 +131,10 @@ describe("API authorization", function() {
       request = { headers: {}, query: {} }
     })
 
+    it("returns null if no token found", function() {
+      expect(auth.extractToken(request)).to.be.null
+    })
+
     it("finds token in authorization header", function() {
       request.headers.authorization = "Bearer token"
       expect(auth.extractToken(request)).to.equal("token")
@@ -150,25 +154,19 @@ describe("API authorization", function() {
 
   describe("buildMiddleware", function() {
     const secret = "sUpEr SecReT!1!"
-    const response = { locals: {} }
     const payload = { a: 1 }
     const keystoreBuilder = () => {
       return { default: Buffer.from(secret) }
     }
+    stubEnv()
 
-    let request, token, middleware
+    let request, token, middleware, response
     beforeEach(function() {
+      process.env.REQUIRE_AUTH = "true"
       middleware = auth.buildMiddleware({ keystoreBuilder })
       token = jwt.sign(payload, secret)
       request = { headers: {}, query: {} }
-    })
-
-    it("fails if no token provided", function(done) {
-      middleware(request, response, err => {
-        expect(err.name).to.equal("UnauthorizedError")
-        expect(err.message).to.match(/No authorization token was found/)
-        done()
-      })
+      response = { locals: {} }
     })
 
     it("fails if token is malformed", function(done) {
@@ -219,11 +217,66 @@ describe("API authorization", function() {
       })
     })
 
+    it("fails if no token provided and auth is required", function(done) {
+      middleware(request, response, err => {
+        expect(err.name).to.equal("UnauthorizedError")
+        expect(err.message).to.match(/JWT is required/)
+        done()
+      })
+    })
+
     it("accepts a valid token signed with secret", function(done) {
       request.query.token = token
       middleware(request, response, err => {
         expect(response.locals.JWTPayload).to.include(payload)
         done(err)
+      })
+    })
+
+    describe("when auth is not required", function() {
+      beforeEach(function() {
+        middleware = auth.buildMiddleware({ isRequired: false })
+      })
+
+      it("accepts if no token provided", function(done) {
+        middleware(request, response, err => {
+          expect(err).to.be.undefined
+          expect(response.locals.JWTPayload).to.be.undefined
+          done()
+        })
+      })
+
+      it("still sets payload", function(done) {
+        request.query.token = token
+        middleware(request, response, err => {
+          expect(response.locals.JWTPayload).to.include(payload)
+          done(err)
+        })
+      })
+
+      describe("and no secret is set", function() {
+        beforeEach(function() {
+          middleware = auth.buildMiddleware({
+            keystoreBuilder: () => {},
+            isRequired: false,
+          })
+        })
+
+        it("accepts if no token provided", function(done) {
+          middleware(request, response, err => {
+            expect(err).to.be.undefined
+            expect(response.locals.JWTPayload).to.be.undefined
+            done()
+          })
+        })
+
+        it("still sets payload", function(done) {
+          request.query.token = token
+          middleware(request, response, err => {
+            expect(response.locals.JWTPayload).to.include(payload)
+            done(err)
+          })
+        })
       })
     })
   })
