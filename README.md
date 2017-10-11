@@ -28,7 +28,7 @@ set, `auth.required()` returns true iff `NODE_ENV === 'production'`)
 ## Usage
 
 Set the `AUTH_SECRET` environment variable; e.g. with
-`AUTH_SECRET="kid:secret" node myfancyapp.js`
+`AUTH_SECRET="kid:secret" node myfancyapp.js`.
 
 ```js
 var auth = require('inst-node-jwt')
@@ -59,15 +59,15 @@ If the token is valid, `res.locals.JWTPayload` will be set with the token's payl
 
 ## About
 
-`inst-node-jwt fills a need for a simple JWT middleware that can handle key
-`rotation.
+`inst-node-jwt` fills a need for a simple JWT middleware that can handle key
+rotation.
 
 `required()`: returns `true` if `NODE_ENV === production` or
 `REQUIRE_AUTH` is set
 
 `middleware() / errorHandler()`: two Expressjs middlewares that should be called
 early in your middleware pipeline. If `middleware()` is unable to verify a JWT,
-it will abort the request, send an error to the `errorHandler()` middleware,
+it will abort the request and send an error to the `errorHandler()` middleware,
 which will return a `401` error with a JSON description of the error.
 
 
@@ -82,6 +82,8 @@ separated by a `:`.
 const auth = require('inst-node-jwt')
 
 (async () => {
+  // DO NOT SET YOUR SECRETS INLINE LIKE THIS IN A PRODUCTION APP
+  //   see https://12factor.net/config
   const s1 = Buffer.from("secret1").toString("base64")
   const s2 = Buffer.from("secret2").toString("base64")
   process.env.AUTH_SECRET = `secret1:${s1} secret2:${s2}`
@@ -109,6 +111,8 @@ A secret that has no `kid:` is known as the `default` key. There can only be one
 const auth = require('inst-node-jwt')
 
 (async () => {
+  // DO NOT SET YOUR SECRETS INLINE LIKE THIS IN A PRODUCTION APP
+  //   see https://12factor.net/config
   const s1 = Buffer.from("secret1").toString("base64")
   const s2 = Buffer.from("secret2").toString("base64")
   const s3 = Buffer.from("secret3").toString("base64")
@@ -139,6 +143,8 @@ keystore to verify.
 const auth = require('inst-node-jwt')
 
 (async () => {
+  // DO NOT SET YOUR SECRETS INLINE LIKE THIS IN A PRODUCTION APP
+  //   see https://12factor.net/config
   const s1 = Buffer.from("secret1").toString("base64")
   const s2 = Buffer.from("secret2").toString("base64")
   process.env.AUTH_SECRET = `${s1} secret2:${s2}`
