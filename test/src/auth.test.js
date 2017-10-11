@@ -21,6 +21,26 @@ describe("API authorization", function() {
       expect(auth.required()).to.be.true
     })
 
+    describe("responds to the specific value of REQUIRE_AUTH", function() {
+      it("setting to '0' does't work", function() {
+        process.env.NODE_ENV = "test"
+        process.env.REQUIRE_AUTH = "0"
+        expect(auth.required()).to.be.false
+      })
+
+      it("setting to 'false' does't work", function() {
+        process.env.NODE_ENV = "test"
+        process.env.REQUIRE_AUTH = "false"
+        expect(auth.required()).to.be.false
+      })
+
+      it("setting to anything else works", function() {
+        process.env.NODE_ENV = "test"
+        process.env.REQUIRE_AUTH = "asdf"
+        expect(auth.required()).to.be.true
+      })
+    })
+
     it("defaults false for development", function() {
       process.env.NODE_ENV = "development"
       delete process.env.REQUIRE_AUTH

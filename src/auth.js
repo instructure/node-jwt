@@ -106,9 +106,15 @@ exports.verifyToken = async function verifyToken(token, options) {
 }
 
 exports.required = function required() {
-  return (
-    process.env.NODE_ENV === "production" || process.env.REQUIRE_AUTH === "true"
-  )
+  if (process.env.NODE_ENV === "production") {
+    return true
+  }
+  if (process.env.REQUIRE_AUTH) {
+    return (
+      process.env.REQUIRE_AUTH !== "false" && process.env.REQUIRE_AUTH !== "0"
+    )
+  }
+  return false
 }
 
 exports.buildMiddleware = function buildMiddleware(options) {
