@@ -106,15 +106,13 @@ exports.verifyToken = async function verifyToken(token, options) {
 }
 
 exports.required = function required() {
-  if (process.env.NODE_ENV === "production") {
-    return true
-  }
   if (process.env.REQUIRE_AUTH) {
     return (
-      process.env.REQUIRE_AUTH !== "false" && process.env.REQUIRE_AUTH !== "0"
+      process.env.REQUIRE_AUTH.toLowerCase() !== "false" &&
+      process.env.REQUIRE_AUTH !== "0"
     )
   }
-  return false
+  return process.env.NODE_ENV === "production"
 }
 
 exports.buildMiddleware = function buildMiddleware(options) {

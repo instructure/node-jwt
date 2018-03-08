@@ -9,32 +9,38 @@ describe("API authorization", function() {
   describe("required", function() {
     stubEnv()
 
-    it("defaults false for test", function() {
+    it("defaults to false in test env", function() {
       process.env.NODE_ENV = "test"
       delete process.env.REQUIRE_AUTH
       expect(auth.required()).to.be.false
     })
 
-    it("can be forced on for test", function() {
+    it("can be forced to true", function() {
       process.env.NODE_ENV = "test"
       process.env.REQUIRE_AUTH = "true"
       expect(auth.required()).to.be.true
     })
 
     describe("responds to the specific value of REQUIRE_AUTH", function() {
-      it("setting to '0' does't work", function() {
+      it("setting to '0' forces auth off", function() {
         process.env.NODE_ENV = "test"
         process.env.REQUIRE_AUTH = "0"
         expect(auth.required()).to.be.false
       })
 
-      it("setting to 'false' does't work", function() {
+      it("setting to 'false' forces auth off", function() {
         process.env.NODE_ENV = "test"
         process.env.REQUIRE_AUTH = "false"
         expect(auth.required()).to.be.false
       })
 
-      it("setting to anything else works", function() {
+      it("setting to 'false' (case-insensitve) forces auth off", function() {
+        process.env.NODE_ENV = "test"
+        process.env.REQUIRE_AUTH = "fAlSe"
+        expect(auth.required()).to.be.false
+      })
+
+      it("setting to anything else forces auth on", function() {
         process.env.NODE_ENV = "test"
         process.env.REQUIRE_AUTH = "asdf"
         expect(auth.required()).to.be.true
@@ -59,10 +65,10 @@ describe("API authorization", function() {
       expect(auth.required()).to.be.true
     })
 
-    it("can't be forced off for production", function() {
+    it("can be forced on for production", function() {
       process.env.NODE_ENV = "production"
       process.env.REQUIRE_AUTH = "false"
-      expect(auth.required()).to.be.true
+      expect(auth.required()).to.be.false
     })
   })
 

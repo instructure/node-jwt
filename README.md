@@ -20,9 +20,12 @@ npm install inst-node-jwt
 [Keystore](#keystore) for more details.
 * `MAX_JWT_AGE` - age that JWT will last before being rejected. Uses
 [zeit/ms](https://github.com/zeit/ms) format. If not set, defaults to `5s`.
-* `REQUIRE_AUTH` - used for development. When set, `auth.required()` returns
-`true` and JWTs are required with every request. (When `REQUIRE_AUTH` is not
-set, `auth.required()` returns true iff `NODE_ENV === 'production'`)
+* `REQUIRE_AUTH` - used for development.
+  * When set to 'false' (case-insensitive) or '0', JWTs will not be required
+    by this library's middleware
+  * When set to anything else (e.g. 'true'), JWTs are required with
+    every request
+  * When not set, `auth.required()` returns true iff `NODE_ENV === 'production'`
 
 
 ## Usage
@@ -62,8 +65,11 @@ If the token is valid, `res.locals.JWTPayload` will be set with the token's payl
 `inst-node-jwt` fills a need for a simple JWT middleware that can handle key
 rotation.
 
-`required()`: returns `true` if `NODE_ENV === production` or
-`REQUIRE_AUTH` is set
+`required()`: defaults to the boolean value of `NODE_ENV === 'production'` but
+can be overridden to return something else by setting `REQUIRE_AUTH`. (see
+description of `REQUIRE_AUTH` below)
+Use this function to determine whether or not to use this library's middleware
+in your Expressjs middleware stack
 
 `middleware() / errorHandler()`: two Expressjs middlewares that should be called
 early in your middleware pipeline. If `middleware()` is unable to verify a JWT,
