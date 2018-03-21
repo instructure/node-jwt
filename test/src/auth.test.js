@@ -5,6 +5,10 @@ const auth = require("../../src/auth")
 const UnauthorizedError = require("../../src/unauthorizedError")
 const jwt = require("jsonwebtoken")
 
+function hoursFromNow(hours) {
+  return +Date.now() / 1000 + 60 * 60 * hours
+}
+
 describe("API authorization", function() {
   describe("required", function() {
     stubEnv()
@@ -75,28 +79,35 @@ describe("API authorization", function() {
   describe("max age", function() {
     stubEnv()
 
-    const secret = Buffer.from("sUpEr SecReT!1!").toString("base64")
-    const tenSecondsAgo = +Date.now() / 1000 - 10
-    const payload = { a: 1, iat: tenSecondsAgo }
+    const payload = { a: 1, iat: hoursFromNow(-24) }
+    beforeEach(() => {
+      process.env.AUTH_SECRET = Buffer.from("sUpEr SecReT!1!").toString(
+        "base64"
+      )
+      process.env.MAX_JWT_AGE = "12h"
+    })
 
-    it("gets value from environment", async function() {
-      process.env.MAX_JWT_AGE = "30s"
-      process.env.AUTH_SECRET = secret
+    it("fails if MAX_JWT_AGE is shorter than `now - iat`", async function() {
+      const token = await auth.createToken(payload)
 
+      const err = await expectRejection(auth.verifyToken(token))
+      expect(err.name).to.equal("UnauthorizedError")
+    })
+
+    it("ignores MAX_JWT_AGE if token has an exp claim", async function() {
+      payload.exp = hoursFromNow(24)
       const token = await auth.createToken(payload)
 
       const result = await auth.verifyToken(token)
       expect(result).to.include(payload)
     })
-
-    it("defaults to 5 seconds", async function() {
+    it("never expires if token has no exp claim and MAX_JWT_AGE is not set", async function() {
       delete process.env.MAX_JWT_AGE
-      process.env.AUTH_SECRET = secret
 
       const token = await auth.createToken(payload)
 
-      const err = await expectRejection(auth.verifyToken(token))
-      expect(err.name).to.equal("UnauthorizedError")
+      const result = await auth.verifyToken(token)
+      expect(result).to.include(payload)
     })
   })
 
@@ -225,11 +236,13 @@ describe("API authorization", function() {
     })
 
     it("fails if token is expired", function(done) {
-      const twoDaysAgo = +Date.now() / 1000 - 172800
-      request.query.token = jwt.sign({ iat: twoDaysAgo }, secret)
+      request.query.token = jwt.sign(
+        { iat: hoursFromNow(-4), exp: hoursFromNow(-2) },
+        secret
+      )
       middleware(request, response, err => {
         expect(err.name).to.equal("UnauthorizedError")
-        expect(err.JWTError).to.equal("maxAge exceeded")
+        expect(err.JWTError).to.equal("jwt expired")
         done()
       })
     })

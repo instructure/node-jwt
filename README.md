@@ -18,8 +18,11 @@ npm install inst-node-jwt
 * `AUTH_SECRET` - The secret(s) used for verifying JWTs. Secrets are
 `:`-separated key-value pairs. Multiple secrets are space-separated. See
 [Keystore](#keystore) for more details.
-* `MAX_JWT_AGE` - age that JWT will last before being rejected. Uses
-[zeit/ms](https://github.com/zeit/ms) format. If not set, defaults to `5s`.
+* `MAX_JWT_AGE` - if a JWT is not given an `exp` claim (expiration date), then
+the JWT will be rejected if the claim's `iat` (signed-at date) is more than
+`MAX_JWT_AGE` in the past.
+Uses [zeit/ms](https://github.com/zeit/ms) format. If not set, JWTs without an
+`exp` claim will never expire.
 * `REQUIRE_AUTH` - used for development.
   * When set to 'false' (case-insensitive) or '0', JWTs will not be required
     by this library's middleware

@@ -6,10 +6,6 @@ const UnauthorizedError = require("./unauthorizedError")
 // private methods
 //
 
-function _maxAge() {
-  return process.env.MAX_JWT_AGE || "5s"
-}
-
 function _deny(response, errors) {
   response.status(401)
   response.json({ errors })
@@ -45,14 +41,17 @@ exports.verifyToken = async function verifyToken(token, options) {
     options
   )
   const keystore = await keystoreBuilder()
+  const decoded = jwt.decode(token, { complete: true })
   const jwtOptions = {
-    maxAge: _maxAge(),
     algorithms: ["HS256"],
+  }
+  // if the token has no expiration claim, use the default max age
+  if (decoded && decoded.payload && decoded.payload.exp === undefined) {
+    jwtOptions.maxAge = process.env.MAX_JWT_AGE
   }
   const verifiers = [
     function verifyWithKid() {
       try {
-        const decoded = jwt.decode(token, { complete: true })
         if (decoded && decoded.header && decoded.header.kid) {
           const kid = decoded.header.kid
           const key = keystore[kid]
