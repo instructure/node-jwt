@@ -140,9 +140,10 @@ exports.required = function required() {
 };
 
 exports.buildMiddleware = function buildMiddleware(options) {
-  const { keystoreBuilder, isRequired } = Object.assign(
+  const { keystoreBuilder, isRequired, purpose } = Object.assign(
     {
       keystoreBuilder: keystoreBuilders.fromMany,
+      purpose: "local",
       isRequired: exports.required()
     },
     options
@@ -154,7 +155,8 @@ exports.buildMiddleware = function buildMiddleware(options) {
         res.locals.JWTPayload = jwt.decode(token);
         if (isRequired) {
           await exports.verifyToken(token, {
-            keystoreBuilder
+            keystoreBuilder,
+            purpose
           });
         }
       } else if (isRequired) {

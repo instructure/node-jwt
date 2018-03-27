@@ -37,8 +37,6 @@
   "license": "ISC",
   "dependencies": {
     "consul": "^0.29.0",
-    "eslint-config-prettier": "^2.9.0",
-    "eslint-plugin-prettier": "^2.6.0",
     "jsonwebtoken": "^7.4.1",
     "lodash.mapvalues": "^4.6.0"
   },
@@ -46,6 +44,8 @@
     "chai": "^4.0.2",
     "cross-env": "^5.0.1",
     "eslint": "^4.1.1",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-mocha": "^4.11.0",
     "eslint-plugin-promise": "^3.5.0",
     "istanbul": "^0.4.5",
