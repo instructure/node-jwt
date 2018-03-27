@@ -125,6 +125,82 @@ describe("API authorization", function() {
       expect(result).to.include(payload)
     })
 
+    it("rejects with 'none' algorithm", async function() {
+      const keystoreBuilder = () => {
+        return { default: secret }
+      }
+
+      const token = await auth.createToken(payload, {
+        algorithm: "none",
+        keystoreBuilder,
+      })
+      const err = await expectRejection(
+        auth.verifyToken(token, { keystoreBuilder })
+      )
+      expect(err.name).to.equal("UnauthorizedError")
+    })
+
+    it("verifies with HS512 algorithm", async function() {
+      const keystoreBuilder = () => {
+        return { default: secret }
+      }
+
+      const token = await auth.createToken(payload, {
+        algorithm: "HS512",
+        keystoreBuilder,
+      })
+      const result = await auth.verifyToken(token, { keystoreBuilder })
+      expect(result).to.include(payload)
+    })
+
+    it("verifies with ES512 algorithm", async function() {
+      // this is a random keypair generated just for this test
+      const publicKey =
+        "-----BEGIN PUBLIC KEY-----\n" +
+        "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEXcjKOpKzx4Ij8vwndnjzpPyvNGZpeTLS\n" +
+        "0SG7kAmbGOjd1ivK/AsHy6GzXeNwo6LAr80wYYBOVrWmbW5O5whXcQ==\n" +
+        "-----END PUBLIC KEY-----\n"
+
+      const privateKey =
+        "-----BEGIN EC PRIVATE KEY-----\n" +
+        "MHQCAQEEIDj7vlqvdVuNC5gvlEAyPmaZrKtZ/1Eket3XSL2F9vewoAcGBSuBBAAK\n" +
+        "oUQDQgAEXcjKOpKzx4Ij8vwndnjzpPyvNGZpeTLS0SG7kAmbGOjd1ivK/AsHy6Gz\n" +
+        "XeNwo6LAr80wYYBOVrWmbW5O5whXcQ==\n" +
+        "-----END EC PRIVATE KEY-----\n"
+
+      const signingKeystoreBuilder = () => ({ default: privateKey })
+      const verifyingKeystoreBuilder = () => ({ default: publicKey })
+
+      const token = await auth.createToken(payload, {
+        algorithm: "ES512",
+        keystoreBuilder: signingKeystoreBuilder,
+      })
+      const result = await auth.verifyToken(token, {
+        keystoreBuilder: verifyingKeystoreBuilder,
+        purpose: "public",
+      })
+      expect(result).to.include(payload)
+    })
+
+    it("rejects HMAC signature when expecting asymmetric algorithm", async function() {
+      const publicKey =
+        "-----BEGIN PUBLIC KEY-----\n" +
+        "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEXcjKOpKzx4Ij8vwndnjzpPyvNGZpeTLS\n" +
+        "0SG7kAmbGOjd1ivK/AsHy6GzXeNwo6LAr80wYYBOVrWmbW5O5whXcQ==\n" +
+        "-----END PUBLIC KEY-----\n"
+
+      const keystoreBuilder = () => ({ default: publicKey })
+
+      const token = await auth.createToken(payload, {
+        algorithm: "HS256",
+        keystoreBuilder,
+      })
+      const err = await expectRejection(
+        auth.verifyToken(token, { keystoreBuilder, purpose: "public" })
+      )
+      expect(err.name).to.equal("UnauthorizedError")
+    })
+
     it("uses secret with kid if kid is included in header", async function() {
       const keystoreBuilder = () => {
         return { kid: secret }

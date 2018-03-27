@@ -34,17 +34,42 @@ exports.extractToken = function extractToken(req) {
 }
 
 exports.verifyToken = async function verifyToken(token, options) {
-  const { keystoreBuilder } = Object.assign(
+  // the `purpose` option aligns with the purpose field in paseto
+  // (https://github.com/paragonie/paseto). we use this value to select the
+  // appropriate subset of algorithms to support when verifying the token.
+  //
+  // * a value of "local" (the default here) indicates that the key from the
+  //   keystore is a shared secret and is intended to be used with a symmetric
+  //   HMAC algorithm such as HS512.
+  //
+  // * a value of "public" indicates that the key from the keystore is a public
+  //   key and is intended to be used with an asymmetric algorithm such as ES512.
+  //
+  // note that this does not work for a situation where a caller's clients are
+  // migrating from hmac to an asymmetric algorithm. in future work we'll want
+  // to address that by attaching this value to the key in the keystore instead
+  // of to the call site.
+  const { keystoreBuilder, purpose } = Object.assign(
     {
       keystoreBuilder: keystoreBuilders.fromMany,
+      purpose: "local",
     },
     options
   )
+
+  let algorithms = []
+  switch (purpose) {
+    case "local":
+      algorithms = ["HS256", "HS512"]
+      break
+    case "public":
+      algorithms = ["ES512"]
+      break
+  }
+
   const keystore = await keystoreBuilder()
   const decoded = jwt.decode(token, { complete: true })
-  const jwtOptions = {
-    algorithms: ["HS256"],
-  }
+  const jwtOptions = { algorithms }
   // if the token has no expiration claim, use the default max age
   if (decoded && decoded.payload && decoded.payload.exp === undefined) {
     jwtOptions.maxAge = process.env.MAX_JWT_AGE
@@ -151,9 +176,11 @@ exports.errorHandler = function errorHandler(err, req, res, next) {
 }
 
 exports.createToken = async function createToken(payload, options) {
-  const { kid, keystoreBuilder } = Object.assign(
+  const { kid, keystoreBuilder, algorithm } = Object.assign(
     {
       keystoreBuilder: keystoreBuilders.fromMany,
+      algorithm: "HS512",
+      // ES512 is more secure, but default to symmetric for simplicity
     },
     options
   )
@@ -162,7 +189,7 @@ exports.createToken = async function createToken(payload, options) {
     const key =
       keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]]
     const signingKid = Object.keys(keystore).find(k => keystore[k] === key)
-    return jwt.sign(payload, key, { header: { kid: signingKid } })
+    return jwt.sign(payload, key, { algorithm, header: { kid: signingKid } })
   } catch (err) {
     throw new UnauthorizedError(err, "Token signing failed")
   }
