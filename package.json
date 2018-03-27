@@ -20,8 +20,8 @@
   "scripts": {
     "coverage:check": "cross-env NODE_ENV=test nyc check-coverage",
     "coverage:run": "cross-env NODE_ENV=test nyc mocha 'test/**/*.js'",
-    "lint:check": "eslint src/ test/ && prettier --no-semi --trailing-comma es5 --list-different 'src/**/*.js' 'test/**/*.js'",
-    "lint:fix": "eslint --fix src/ test/ && prettier --no-semi --trailing-comma es5 --write 'src/**/*.js' 'test/**/*.js'",
+    "lint:check": "eslint src/ test/",
+    "lint:fix": "eslint --fix src/ test/",
     "test": "NODE_ENV=test mocha 'test/**/*.js'"
   },
   "repository": {
@@ -37,6 +37,8 @@
   "license": "ISC",
   "dependencies": {
     "consul": "^0.29.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-prettier": "^2.6.0",
     "jsonwebtoken": "^7.4.1",
     "lodash.mapvalues": "^4.6.0"
   },
@@ -49,7 +51,7 @@
     "istanbul": "^0.4.5",
     "mocha": "^3.4.2",
     "nyc": "^11.0.3",
-    "prettier": "^1.5.2",
+    "prettier": "^1.11.1",
     "sinon": "^2.3.6",
     "sinon-chai": "^2.11.0"
   }

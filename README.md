@@ -167,3 +167,19 @@ const auth = require('inst-node-jwt')
   console.log(payload2) // { "bar": "baz" }
 })()
 ```
+
+## Development
+
+### Linter
+
+We use [eslint](http://eslint.org/) and
+[prettier](https://prettier.github.io/prettier/) to check code correctness and
+impose style, respectively. These tools have been set up to stay out of your way
+while keeping style consistent, as well as occasionally pointing out possible errors.
+
+Every commit needs to be linted before pushing: `docker-compose run --rm app yarn run lint:fix`.
+
+We recommend using editor integrations or adding a pre-push git hook to
+take care of this automatically.
+You can do this by running this command once from the root of the `node-jwt`
+directory: `ln -s ../../pre-push.sh .git/hooks/pre-push`

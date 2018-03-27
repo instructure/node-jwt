@@ -13,38 +13,35 @@
     "Promise": false
   },
   "extends": [
-    "eslint:recommended"
+    "plugin:prettier/recommended"
   ],
   "plugins": [
     "mocha",
     "promise"
   ],
   "rules": {
+    // do not put style rules in here;
+    //   we use eslint only to catch possible errors
     "array-callback-return": "error",
     "consistent-return": "error",
     "eqeqeq": "error",
     "guard-for-in": "error",
     "mocha/handle-done-callback": "error",
     "mocha/no-exclusive-tests": "error",
-    "mocha/no-global-tests": "error",
-    "mocha/no-pending-tests": "off",
+    "mocha/no-identical-title": "error",
     "mocha/no-nested-tests": "error",
-    "mocha/no-skipped-tests": "off",
-    "mocha/no-synchronous-tests": "off",
     "promise/param-names": "error",
     "promise/always-return": "error",
     "promise/catch-or-return": "error",
-    "no-extra-semi": "off",
-    "no-param-reassign": "error",
+    "promise/no-native": "error",
     "no-var": "error",
     "no-eval": "error",
-    "no-shadow": "error",
     "no-shadow-restricted-names": "error",
     "no-template-curly-in-string": "error",
     "prefer-const": "error",
-    "prefer-rest-params": "error",
-    "prefer-template": "error",
-    "strict": "error",
-    "no-unused-vars": ["error", {"varsIgnorePattern": "^_$", "args": "none"} ]
+
+    "mocha/no-pending-tests": "off",
+    "mocha/no-skipped-tests": "off",
+    "mocha/no-synchronous-tests": "off"
   }
 }
