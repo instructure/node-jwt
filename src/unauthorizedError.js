@@ -1,21 +1,21 @@
-const util = require("util")
+const util = require("util");
 
 function UnauthorizedError(...args) {
-  let error, message
+  let error, message;
   if (args.length > 1) {
-    ;[error, message] = args
+    [error, message] = args;
   } else {
-    ;[message] = args
+    [message] = args;
   }
 
-  this.name = this.constructor.name
-  this.message = message
+  this.name = this.constructor.name;
+  this.message = message;
   if (error && error.message) {
-    this.JWTError = error.message
+    this.JWTError = error.message;
   }
-  Error.call(this)
-  Error.captureStackTrace(this, this.constructor)
+  Error.call(this);
+  Error.captureStackTrace(this, this.constructor);
 }
-util.inherits(UnauthorizedError, Error)
+util.inherits(UnauthorizedError, Error);
 
-module.exports = UnauthorizedError
+module.exports = UnauthorizedError;

@@ -1,37 +1,37 @@
-const jwt = require("jsonwebtoken")
-const keystoreBuilders = require("./keystoreBuilders")
-const UnauthorizedError = require("./unauthorizedError")
+const jwt = require("jsonwebtoken");
+const keystoreBuilders = require("./keystoreBuilders");
+const UnauthorizedError = require("./unauthorizedError");
 
 //
 // private methods
 //
 
 function _deny(response, errors) {
-  response.status(401)
-  response.json({ errors })
+  response.status(401);
+  response.json({ errors });
 }
 
 //
 // public methods
 //
 
-exports.keystoreBuilders = keystoreBuilders
+exports.keystoreBuilders = keystoreBuilders;
 
 exports.extractToken = function extractToken(req) {
   if (req.query && req.query.token) {
-    return req.query.token
+    return req.query.token;
   } else if (req.headers && req.headers.authorization) {
-    const parts = req.headers.authorization.split(" ")
+    const parts = req.headers.authorization.split(" ");
     if (parts.length === 2) {
-      const [scheme, credentials] = parts
+      const [scheme, credentials] = parts;
       if (scheme === "Bearer") {
-        return credentials
+        return credentials;
       }
     }
-    throw new UnauthorizedError("Format is Authorization: Bearer [token]")
+    throw new UnauthorizedError("Format is Authorization: Bearer [token]");
   }
-  return null
-}
+  return null;
+};
 
 exports.verifyToken = async function verifyToken(token, options) {
   // the `purpose` option aligns with the purpose field in paseto
@@ -52,145 +52,145 @@ exports.verifyToken = async function verifyToken(token, options) {
   const { keystoreBuilder, purpose } = Object.assign(
     {
       keystoreBuilder: keystoreBuilders.fromMany,
-      purpose: "local",
+      purpose: "local"
     },
     options
-  )
+  );
 
-  let algorithms = []
+  let algorithms = [];
   switch (purpose) {
     case "local":
-      algorithms = ["HS256", "HS512"]
-      break
+      algorithms = ["HS256", "HS512"];
+      break;
     case "public":
-      algorithms = ["ES512"]
-      break
+      algorithms = ["ES512"];
+      break;
   }
 
-  const keystore = await keystoreBuilder()
-  const decoded = jwt.decode(token, { complete: true })
-  const jwtOptions = { algorithms }
+  const keystore = await keystoreBuilder();
+  const decoded = jwt.decode(token, { complete: true });
+  const jwtOptions = { algorithms };
   // if the token has no expiration claim, use the default max age
   if (decoded && decoded.payload && decoded.payload.exp === undefined) {
-    jwtOptions.maxAge = process.env.MAX_JWT_AGE
+    jwtOptions.maxAge = process.env.MAX_JWT_AGE;
   }
   const verifiers = [
     function verifyWithKid() {
       try {
         if (decoded && decoded.header && decoded.header.kid) {
-          const kid = decoded.header.kid
-          const key = keystore[kid]
+          const kid = decoded.header.kid;
+          const key = keystore[kid];
           if (key) {
-            return [undefined, jwt.verify(token, key, jwtOptions)]
+            return [undefined, jwt.verify(token, key, jwtOptions)];
           }
         }
-        return ["kid verification failed", undefined]
+        return ["kid verification failed", undefined];
       } catch (err) {
-        return [err, undefined]
+        return [err, undefined];
       }
     },
     function verifyWithDefault() {
       try {
         if (keystore.default) {
-          return [undefined, jwt.verify(token, keystore.default, jwtOptions)]
+          return [undefined, jwt.verify(token, keystore.default, jwtOptions)];
         }
-        return ["default verification failed", undefined]
+        return ["default verification failed", undefined];
       } catch (err) {
-        return [err, undefined]
+        return [err, undefined];
       }
     },
     function verifyWithKeystore() {
       for (const kid in keystore) {
         if (keystore.hasOwnProperty(kid) && kid !== "default") {
           try {
-            return [undefined, jwt.verify(token, keystore[kid], jwtOptions)]
+            return [undefined, jwt.verify(token, keystore[kid], jwtOptions)];
           } catch (err) {
             // ignore key that doesn't work and move on to the next one
           }
         }
       }
-      return ["all verification failed", undefined]
-    },
-  ]
+      return ["all verification failed", undefined];
+    }
+  ];
 
-  let error, payload
+  let error, payload;
   for (const verifier of verifiers) {
-    ;[error, payload] = verifier()
+    [error, payload] = verifier();
     // Error "invalid signature" means key didn't match - continue checking
     if (error && error.message && error.message !== "invalid signature") {
-      throw new UnauthorizedError(error, "Verification Error")
+      throw new UnauthorizedError(error, "Verification Error");
     }
-    if (payload) break
+    if (payload) break;
   }
 
   if (!payload) {
-    throw new UnauthorizedError("Verification Error: No matching keys")
+    throw new UnauthorizedError("Verification Error: No matching keys");
   }
-  return payload
-}
+  return payload;
+};
 
 exports.required = function required() {
   if (process.env.REQUIRE_AUTH) {
     return (
       process.env.REQUIRE_AUTH.toLowerCase() !== "false" &&
       process.env.REQUIRE_AUTH !== "0"
-    )
+    );
   }
-  return process.env.NODE_ENV === "production"
-}
+  return process.env.NODE_ENV === "production";
+};
 
 exports.buildMiddleware = function buildMiddleware(options) {
   const { keystoreBuilder, isRequired } = Object.assign(
     {
       keystoreBuilder: keystoreBuilders.fromMany,
-      isRequired: exports.required(),
+      isRequired: exports.required()
     },
     options
-  )
+  );
   return async function _authMiddleware(req, res, next) {
     try {
-      const token = exports.extractToken(req)
+      const token = exports.extractToken(req);
       if (token) {
-        res.locals.JWTPayload = jwt.decode(token)
+        res.locals.JWTPayload = jwt.decode(token);
         if (isRequired) {
           await exports.verifyToken(token, {
-            keystoreBuilder,
-          })
+            keystoreBuilder
+          });
         }
       } else if (isRequired) {
-        throw new UnauthorizedError("JWT is required")
+        throw new UnauthorizedError("JWT is required");
       }
-      next()
+      next();
     } catch (err) {
-      next(err)
+      next(err);
     }
-  }
-}
+  };
+};
 
 exports.errorHandler = function errorHandler(err, req, res, next) {
   if (err.name === "UnauthorizedError") {
-    _deny(res, err)
+    _deny(res, err);
   } else {
-    next(err)
+    next(err);
   }
-}
+};
 
 exports.createToken = async function createToken(payload, options) {
   const { kid, keystoreBuilder, algorithm } = Object.assign(
     {
       keystoreBuilder: keystoreBuilders.fromMany,
-      algorithm: "HS512",
+      algorithm: "HS512"
       // ES512 is more secure, but default to symmetric for simplicity
     },
     options
-  )
+  );
   try {
-    const keystore = await keystoreBuilder()
+    const keystore = await keystoreBuilder();
     const key =
-      keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]]
-    const signingKid = Object.keys(keystore).find(k => keystore[k] === key)
-    return jwt.sign(payload, key, { algorithm, header: { kid: signingKid } })
+      keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]];
+    const signingKid = Object.keys(keystore).find(k => keystore[k] === key);
+    return jwt.sign(payload, key, { algorithm, header: { kid: signingKid } });
   } catch (err) {
-    throw new UnauthorizedError(err, "Token signing failed")
+    throw new UnauthorizedError(err, "Token signing failed");
   }
-}
+};
