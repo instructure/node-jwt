@@ -1,6 +1,6 @@
 {
   "name": "inst-node-jwt",
-  "version": "4.2.2",
+  "version": "5.0.0",
   "description": "express JWT middleware",
   "main": "lib/auth.js",
   "nyc": {
