@@ -2,7 +2,7 @@
   "name": "inst-node-jwt",
   "version": "4.2.2",
   "description": "express JWT middleware",
-  "main": "src/auth.js",
+  "main": "lib/auth.js",
   "nyc": {
     "all": true,
     "lines": 80,
@@ -22,6 +22,8 @@
     "coverage:run": "cross-env NODE_ENV=test nyc mocha 'test/**/*.js'",
     "lint:check": "eslint src/ test/",
     "lint:fix": "eslint --fix src/ test/",
+    "build": "babel src -d lib",
+    "prepublishOnly": "yarn build",
     "test": "NODE_ENV=test mocha 'test/**/*.js'"
   },
   "repository": {
@@ -41,12 +43,14 @@
     "lodash.mapvalues": "^4.6.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
     "chai": "^4.0.2",
     "cross-env": "^5.0.1",
     "eslint": "^4.1.1",
     "eslint-config-prettier": "^2.9.0",
-    "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-mocha": "^4.11.0",
+    "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-promise": "^3.5.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.4.2",
