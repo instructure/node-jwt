@@ -28,6 +28,7 @@ fi
 
 echo ": Run linters and tests..."
 $DOCKER_COMPOSE_RUN -d --name work_container app tail -f /dev/null # don't do anything, but don't exit either
+$DOCKER_EXEC work_container yarn run audit
 $DOCKER_EXEC work_container yarn run lint:check
 $DOCKER_EXEC work_container yarn run coverage:run
 $DOCKER_EXEC work_container yarn run coverage:check

@@ -79,6 +79,7 @@ exports.verifyToken = async function verifyToken(token, options) {
       try {
         if (decoded && decoded.header && decoded.header.kid) {
           const kid = decoded.header.kid;
+          // eslint-disable-next-line security/detect-object-injection
           const key = keystore[kid];
           if (key) {
             return [undefined, jwt.verify(token, key, jwtOptions)];
@@ -103,6 +104,7 @@ exports.verifyToken = async function verifyToken(token, options) {
       for (const kid in keystore) {
         if (keystore.hasOwnProperty(kid) && kid !== "default") {
           try {
+            // eslint-disable-next-line security/detect-object-injection
             return [undefined, jwt.verify(token, keystore[kid], jwtOptions)];
           } catch (err) {
             // ignore key that doesn't work and move on to the next one
@@ -189,7 +191,9 @@ exports.createToken = async function createToken(payload, options) {
   try {
     const keystore = await keystoreBuilder();
     const key =
+      // eslint-disable-next-line security/detect-object-injection
       keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]];
+    // eslint-disable-next-line security/detect-object-injection
     const signingKid = Object.keys(keystore).find(k => keystore[k] === key);
     return jwt.sign(payload, key, { algorithm, header: { kid: signingKid } });
   } catch (err) {

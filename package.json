@@ -21,6 +21,7 @@
     ]
   },
   "scripts": {
+    "audit": "nsp check --threshold 3.99",
     "coverage:check": "cross-env NODE_ENV=test nyc check-coverage",
     "coverage:run": "cross-env NODE_ENV=test nyc mocha 'test/**/*.js'",
     "lint:check": "eslint src/ test/",
@@ -42,8 +43,10 @@
   "license": "ISC",
   "dependencies": {
     "consul": "^0.29.0",
-    "jsonwebtoken": "^7.4.1",
-    "lodash.mapvalues": "^4.6.0"
+    "eslint-plugin-security": "^1.4.0",
+    "jsonwebtoken": "^8.2.1",
+    "lodash.mapvalues": "^4.6.0",
+    "nsp": "^3.2.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
