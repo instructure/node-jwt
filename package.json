@@ -43,10 +43,8 @@
   "license": "ISC",
   "dependencies": {
     "consul": "^0.29.0",
-    "eslint-plugin-security": "^1.4.0",
     "jsonwebtoken": "^8.2.1",
-    "lodash.mapvalues": "^4.6.0",
-    "nsp": "^3.2.1"
+    "lodash.mapvalues": "^4.6.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -58,8 +56,10 @@
     "eslint-plugin-mocha": "^4.11.0",
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-security": "^1.4.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.4.2",
+    "nsp": "^3.2.1",
     "nyc": "^11.0.3",
     "prettier": "^1.11.1",
     "sinon": "^2.3.6",
