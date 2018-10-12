@@ -1,6 +1,8 @@
+const fromString = require("./fromString");
 const fromEnv = require("./fromEnv");
 const fromConsul = require("./fromConsul");
 
+exports.fromString = fromString;
 exports.fromEnv = fromEnv;
 exports.fromConsul = fromConsul;
 
