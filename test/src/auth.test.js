@@ -5,6 +5,22 @@ const auth = require("../../src/auth");
 const UnauthorizedError = require("../../src/unauthorizedError");
 const jwt = require("jsonwebtoken");
 
+// We disallow the HS256 algorithm for security reasons.
+// `jwt` uses this algorithm by default; let's set a new default
+// here and not worry about it later.
+// (we can still override this default by passing in an `options`
+// with an `algorithm` key)
+const _raw_sign = jwt.sign;
+jwt.sign = function sign(payload, secret, options) {
+  options = Object.assign(
+    {
+      algorithm: "HS512"
+    },
+    options
+  );
+  return _raw_sign(payload, secret, options);
+};
+
 function hoursFromNow(hours) {
   return +Date.now() / 1000 + 60 * 60 * hours;
 }
@@ -192,7 +208,7 @@ describe("API authorization", function() {
       const keystoreBuilder = () => ({ default: publicKey });
 
       const token = await auth.createToken(payload, {
-        algorithm: "HS256",
+        algorithm: "HS512",
         keystoreBuilder
       });
       const err = await expectRejection(

@@ -144,6 +144,11 @@ using the key that matchs the `kid`, if there is one. If that fails, it will
 verify using the `default` key. Otherwise, it will try using every key in the
 keystore to verify.
 
+NOTE: the HS256 algorithm is disallowed for security purposes. A JWT
+that was signed using HS256 will be rejected by the verification process.
+To check if a JWT was signed with HS256, base64-decode the JWT (e.g. at
+https://jwt.io/) and make sure the "alg" key in the header doesn't equal "HS256"
+
 ### Signing
 
 `inst-node-jwt` can also sign tokens, e.g. for testing purposes.

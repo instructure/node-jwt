@@ -60,7 +60,7 @@ exports.verifyToken = async function verifyToken(token, options) {
   let algorithms = [];
   switch (purpose) {
     case "local":
-      algorithms = ["HS256", "HS512"];
+      algorithms = ["HS512"];
       break;
     case "public":
       algorithms = ["ES512"];
