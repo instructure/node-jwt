@@ -21,7 +21,6 @@
     ]
   },
   "scripts": {
-    "audit": "nsp check --threshold 3.99",
     "coverage:check": "cross-env NODE_ENV=test nyc check-coverage",
     "coverage:run": "cross-env NODE_ENV=test nyc mocha 'test/**/*.js'",
     "lint:check": "eslint src/ test/",
@@ -59,7 +58,6 @@
     "eslint-plugin-security": "^1.4.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.4.2",
-    "nsp": "^3.2.1",
     "nyc": "^11.0.3",
     "prettier": "^1.11.1",
     "sinon": "^2.3.6",
