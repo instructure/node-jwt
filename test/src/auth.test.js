@@ -362,6 +362,14 @@ describe("API authorization", function() {
       });
     });
 
+    it("sets the JWTVerifyingKid on the response on success", function(done) {
+      request.query.token = token;
+      middleware(request, response, err => {
+        expect(response.locals.JWTVerifyingKid).to.equal("default");
+        done(err);
+      });
+    });
+
     describe("when auth is not required", function() {
       beforeEach(function() {
         middleware = auth.buildMiddleware({ isRequired: false });
@@ -470,6 +478,26 @@ describe("API authorization", function() {
       const token = await auth.createToken({}, { kid: "kid", keystoreBuilder });
       const decoded = jwt.decode(token, { complete: true });
       expect(decoded.header.kid).to.equal("kid");
+    });
+  });
+
+  describe("lookupKey", function() {
+    const secret = "sUpEr SecReT!1!";
+
+    stubEnv();
+
+    it("finds the key by kid in the keystore from the provided builder", async function() {
+      const keystoreBuilder = () => {
+        return { kid: secret };
+      };
+      const key = await auth.lookupKey("kid", keystoreBuilder);
+      expect(key.toString("UTF-8")).to.equal(secret);
+    });
+
+    it("defaults to looking in the keystore from the fromMany builder", async function() {
+      process.env.AUTH_SECRET = Buffer.from(secret).toString("base64");
+      const key = await auth.lookupKey("default");
+      expect(key.toString("UTF-8")).to.equal(secret);
     });
   });
 });

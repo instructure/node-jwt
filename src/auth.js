@@ -33,7 +33,16 @@ exports.extractToken = function extractToken(req) {
   return null;
 };
 
-exports.verifyToken = async function verifyToken(token, options) {
+exports.lookupKey = async function lookupKey(
+  kid,
+  keystoreBuilder = keystoreBuilders.fromMany
+) {
+  const keystore = await keystoreBuilder();
+  // eslint-disable-next-line security/detect-object-injection
+  return keystore[kid];
+};
+
+async function verifyTokenAndReturnPayloadAndKid(token, options) {
   // the `purpose` option aligns with the purpose field in paseto
   // (https://github.com/paragonie/paseto). we use this value to select the
   // appropriate subset of algorithms to support when verifying the token.
@@ -82,22 +91,25 @@ exports.verifyToken = async function verifyToken(token, options) {
           // eslint-disable-next-line security/detect-object-injection
           const key = keystore[kid];
           if (key) {
-            return [undefined, jwt.verify(token, key, jwtOptions)];
+            const payload = jwt.verify(token, key, jwtOptions);
+            return [undefined, payload, kid];
           }
         }
-        return ["kid verification failed", undefined];
+        return ["kid verification failed", undefined, undefined];
       } catch (err) {
-        return [err, undefined];
+        return [err, undefined, undefined];
       }
     },
     function verifyWithDefault() {
       try {
-        if (keystore.default) {
-          return [undefined, jwt.verify(token, keystore.default, jwtOptions)];
+        const key = keystore.default;
+        if (key) {
+          const payload = jwt.verify(token, key, jwtOptions);
+          return [undefined, payload, "default"];
         }
-        return ["default verification failed", undefined];
+        return ["default verification failed", undefined, undefined];
       } catch (err) {
-        return [err, undefined];
+        return [err, undefined, undefined];
       }
     },
     function verifyWithKeystore() {
@@ -105,19 +117,21 @@ exports.verifyToken = async function verifyToken(token, options) {
         if (keystore.hasOwnProperty(kid) && kid !== "default") {
           try {
             // eslint-disable-next-line security/detect-object-injection
-            return [undefined, jwt.verify(token, keystore[kid], jwtOptions)];
+            const key = keystore[kid];
+            const payload = jwt.verify(token, key, jwtOptions);
+            return [undefined, payload, kid];
           } catch (err) {
             // ignore key that doesn't work and move on to the next one
           }
         }
       }
-      return ["all verification failed", undefined];
+      return ["all verification failed", undefined, undefined];
     }
   ];
 
-  let error, payload;
+  let error, payload, kid;
   for (const verifier of verifiers) {
-    [error, payload] = verifier();
+    [error, payload, kid] = verifier();
     // Error "invalid signature" means key didn't match - continue checking
     if (error && error.message && error.message !== "invalid signature") {
       throw new UnauthorizedError(error, "Verification Error");
@@ -128,6 +142,17 @@ exports.verifyToken = async function verifyToken(token, options) {
   if (!payload) {
     throw new UnauthorizedError("Verification Error: No matching keys");
   }
+
+  return [payload, kid];
+}
+
+async function verifyTokenAndReturnKid(token, options) {
+  const [_, kid] = await verifyTokenAndReturnPayloadAndKid(token, options);
+  return kid;
+}
+
+exports.verifyToken = async function verifyToken(token, options) {
+  const [payload, _] = await verifyTokenAndReturnPayloadAndKid(token, options);
   return payload;
 };
 
@@ -156,7 +181,7 @@ exports.buildMiddleware = function buildMiddleware(options) {
       if (token) {
         res.locals.JWTPayload = jwt.decode(token);
         if (isRequired) {
-          await exports.verifyToken(token, {
+          res.locals.JWTVerifyingKid = await verifyTokenAndReturnKid(token, {
             keystoreBuilder,
             purpose
           });
