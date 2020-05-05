@@ -65,6 +65,7 @@ async function verifyTokenAndReturnPayloadAndKid(token, options) {
     },
     options
   );
+  let { kid } = options || {};
 
   let algorithms = [];
   switch (purpose) {
@@ -83,67 +84,72 @@ async function verifyTokenAndReturnPayloadAndKid(token, options) {
   if (decoded && decoded.payload && decoded.payload.exp === undefined) {
     jwtOptions.maxAge = process.env.MAX_JWT_AGE;
   }
-  const verifiers = [
-    function verifyWithKid() {
-      try {
-        if (decoded && decoded.header && decoded.header.kid) {
-          const kid = decoded.header.kid;
-          // eslint-disable-next-line security/detect-object-injection
-          const key = keystore[kid];
-          if (key) {
-            const payload = jwt.verify(token, key, jwtOptions);
-            return [undefined, payload, kid];
-          }
-        }
-        return ["kid verification failed", undefined, undefined];
-      } catch (err) {
-        return [err, undefined, undefined];
-      }
-    },
-    function verifyWithDefault() {
-      try {
-        const key = keystore.default;
-        if (key) {
-          const payload = jwt.verify(token, key, jwtOptions);
-          return [undefined, payload, "default"];
-        }
-        return ["default verification failed", undefined, undefined];
-      } catch (err) {
-        return [err, undefined, undefined];
-      }
-    },
-    function verifyWithKeystore() {
-      for (const kid in keystore) {
-        if (keystore.hasOwnProperty(kid) && kid !== "default") {
-          try {
-            // eslint-disable-next-line security/detect-object-injection
-            const key = keystore[kid];
-            const payload = jwt.verify(token, key, jwtOptions);
-            return [undefined, payload, kid];
-          } catch (err) {
-            // ignore key that doesn't work and move on to the next one
-          }
-        }
-      }
-      return ["all verification failed", undefined, undefined];
-    }
-  ];
 
-  let error, payload, kid;
-  for (const verifier of verifiers) {
-    [error, payload, kid] = verifier();
-    // Error "invalid signature" means key didn't match - continue checking
-    if (error && error.message && error.message !== "invalid signature") {
-      throw new UnauthorizedError(error, "Verification Error");
+  if (decoded && decoded.header && decoded.header.kid) {
+    if (kid && decoded.header.kid !== kid) {
+      throw new UnauthorizedError(
+        "Verification Error: KID doesn't match header"
+      );
+    } else {
+      // if header specifies a kid, decode with that, without allowing fallback
+      // searching to other keys
+      kid = decoded.header.kid;
     }
-    if (payload) break;
   }
 
-  if (!payload) {
-    throw new UnauthorizedError("Verification Error: No matching keys");
+  // try verifying with a specific key. key-specific errors (lookup failure or
+  // signature failure) are returned not thrown, so the caller can decide
+  // whether to try another key. other key-agnostic errors are thrown not
+  // returned. all errors, thrown or returned, are wrapped in an
+  // UnauthorizedError.
+  const verifyWithKid = kid => {
+    if (!keystore.hasOwnProperty(kid)) {
+      const err = new UnauthorizedError("Verification Error: Unknown KID");
+      return [err, undefined];
+    }
+    try {
+      // eslint-disable-next-line security/detect-object-injection
+      const payload = jwt.verify(token, keystore[kid], jwtOptions);
+      return [undefined, payload];
+    } catch (err) {
+      const keySpecific = err.message === "invalid signature";
+      err = new UnauthorizedError(err, "Verification Error");
+      if (!keySpecific) {
+        throw err;
+      }
+      return [err, undefined];
+    }
+  };
+
+  if (kid) {
+    // which kid to verify with known, use it without searching. on a
+    // key-specific error, throw it since there are no other keys to try
+    const [err, payload] = verifyWithKid(kid);
+    if (err) {
+      throw err;
+    }
+    return [payload, kid];
   }
 
-  return [payload, kid];
+  // don't know which kid to use, try for any that matches
+  // default first for common case efficiency
+  if (keystore.hasOwnProperty("default")) {
+    const [err, payload] = verifyWithKid("default");
+    if (!err) {
+      return [payload, "default"];
+    }
+  }
+
+  for (const kid in keystore) {
+    if (kid !== "default" && keystore.hasOwnProperty(kid)) {
+      const [err, payload] = verifyWithKid(kid);
+      if (!err) {
+        return [payload, kid];
+      }
+    }
+  }
+
+  throw new UnauthorizedError("Verification Error: No matching keys");
 }
 
 async function verifyTokenAndReturnKid(token, options) {

@@ -1,6 +1,6 @@
 {
   "name": "inst-node-jwt",
-  "version": "5.4.0",
+  "version": "5.5.0",
   "description": "express JWT middleware",
   "main": "lib/auth.js",
   "files": [
@@ -38,7 +38,7 @@
     "express",
     "jwt"
   ],
-  "author": "Xander Moffatt, Andrew Huff",
+  "author": "Xander Moffatt, Andrew Huff, Jacob Fugal",
   "license": "ISC",
   "dependencies": {
     "consul": "^0.29.0",

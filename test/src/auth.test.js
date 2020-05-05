@@ -230,25 +230,92 @@ describe("API authorization", function() {
       expect(result).to.include(payload);
     });
 
+    it("rejects if verification with kid in header doesn't work", async function() {
+      // signing will use otherSecret, then verifying with the same kid will
+      // use secret, so they shouldn't match. but when verifying the default
+      // key would hold otherSecret -- but we want to assert we don't try it!
+      const otherSecret = Buffer.from("a DIFFERENT sUpEr SecReT!1!");
+      const kid = "specificKid";
+      const createKeystoreBuilder = () => {
+        return {
+          [kid]: otherSecret,
+          default: secret
+        };
+      };
+      const verifyKeystoreBuilder = () => {
+        return {
+          [kid]: secret,
+          default: otherSecret
+        };
+      };
+
+      const token = await auth.createToken(payload, {
+        kid,
+        keystoreBuilder: createKeystoreBuilder
+      });
+      const err = await expectRejection(
+        auth.verifyToken(token, {
+          keystoreBuilder: verifyKeystoreBuilder
+        })
+      );
+
+      expect(err.name).to.equal("UnauthorizedError");
+    });
+
+    it("rejects if verification by specific kid requested and that doesn't match the kid in header", async function() {
+      // all secrets the same so that it could work if we weren't enforcing kids
+      const headerKid = "headerKid";
+      const requestedKid = "requestedKid";
+      const keystoreBuilder = () => {
+        return {
+          [headerKid]: secret,
+          [requestedKid]: secret,
+          default: secret
+        };
+      };
+
+      const token = await auth.createToken(payload, {
+        kid: headerKid,
+        keystoreBuilder
+      });
+      const err = await expectRejection(
+        auth.verifyToken(token, {
+          kid: requestedKid,
+          keystoreBuilder
+        })
+      );
+
+      expect(err.name).to.equal("UnauthorizedError");
+      expect(err.message).to.match(/KID doesn't match header/);
+    });
+
+    it("doesn't fall back to other keys if verification with requested kid fails", async function() {
+      const otherSecret = "difFerENt SecReT!1!";
+      const kid = "requestedKid";
+      const keystoreBuilder = () => {
+        return {
+          [kid]: otherSecret,
+          default: secret
+        };
+      };
+
+      // as if `await auth.createToken(payload, { keystoreBuilder })`, but we
+      // don't want `{ kid: "default" }` in the header
+      const token = jwt.sign(payload, secret, { algorithm: "HS512" });
+      const err = await expectRejection(
+        auth.verifyToken(token, { kid, keystoreBuilder })
+      );
+
+      expect(err.name).to.equal("UnauthorizedError");
+      expect(err.message).to.match(/Verification Error/);
+    });
+
     it("tries all secrets if no default or kid", async function() {
       const keystoreBuilder = () => {
         return { other: secret };
       };
 
       const token = await auth.createToken(payload, { keystoreBuilder });
-      const result = await auth.verifyToken(token, { keystoreBuilder });
-      expect(result).to.include(payload);
-    });
-
-    it("verifies if given kid doesn't exist", async function() {
-      const keystoreBuilder = () => {
-        return { default: secret };
-      };
-
-      const token = await auth.createToken(payload, {
-        kid: "kid",
-        keystoreBuilder
-      });
       const result = await auth.verifyToken(token, { keystoreBuilder });
       expect(result).to.include(payload);
     });
@@ -298,76 +365,76 @@ describe("API authorization", function() {
       response = { locals: {} };
     });
 
-    it("fails if token is malformed", function(done) {
+    async function expectMiddlewareSuccess(request, response) {
+      next = sinon.spy();
+      await middleware(request, response, next);
+      expect(next).to.have.been.calledOnce;
+      expect(next.firstCall.args[0]).to.be.undefined;
+    }
+
+    async function expectMiddlewareFailure(request, response) {
+      next = sinon.spy();
+      await middleware(request, response, next);
+      expect(next).to.have.been.calledOnce;
+      const err = next.firstCall.args[0];
+      expect(err).not.to.be.undefined;
+      return err;
+    }
+
+    it("fails if token is malformed", async function() {
       request.query.token = "not-a-jwt";
-      middleware(request, response, err => {
-        expect(err.name).to.equal("UnauthorizedError");
-        expect(err.JWTError).to.equal("jwt malformed");
-        done();
-      });
+      const err = await expectMiddlewareFailure(request, response);
+      expect(err.name).to.equal("UnauthorizedError");
+      expect(err.JWTError).to.equal("jwt malformed");
     });
 
-    it("fails if the authorization header isn't 'Bearer <token>'", function(done) {
+    it("fails if the authorization header isn't 'Bearer <token>'", async function() {
       request.headers.authorization = "some other scheme";
-      middleware(request, response, err => {
-        expect(err.name).to.equal("UnauthorizedError");
-        expect(err.message).to.match(/Format is Authorization: Bearer/);
-        done();
-      });
+      const err = await expectMiddlewareFailure(request, response);
+      expect(err.name).to.equal("UnauthorizedError");
+      expect(err.message).to.match(/Format is Authorization: Bearer/);
     });
 
-    it("fails if token doesn't match secret", function(done) {
+    it("fails if token doesn't match secret", async function() {
       request.query.token = jwt.sign({}, "wrong secret oh noes");
-      middleware(request, response, err => {
-        expect(err.name).to.equal("UnauthorizedError");
-        expect(err.message).to.match(/No matching keys/);
-        done();
-      });
+      const err = await expectMiddlewareFailure(request, response);
+      expect(err.name).to.equal("UnauthorizedError");
+      expect(err.message).to.match(/No matching keys/);
     });
 
-    it("fails if token is expired", function(done) {
+    it("fails if token is expired", async function() {
       request.query.token = jwt.sign(
         { iat: hoursFromNow(-4), exp: hoursFromNow(-2) },
         secret
       );
-      middleware(request, response, err => {
-        expect(err.name).to.equal("UnauthorizedError");
-        expect(err.JWTError).to.equal("jwt expired");
-        done();
-      });
+      const err = await expectMiddlewareFailure(request, response);
+      expect(err.name).to.equal("UnauthorizedError");
+      expect(err.JWTError).to.equal("jwt expired");
     });
 
-    it("fails if no signature algorithm provided", function(done) {
+    it("fails if no signature algorithm provided", async function() {
       request.query.token = jwt.sign({}, secret, { algorithm: "none" });
-      middleware(request, response, err => {
-        expect(err.name).to.equal("UnauthorizedError");
-        expect(err.JWTError).to.equal("jwt signature is required");
-        done();
-      });
+      const err = await expectMiddlewareFailure(request, response);
+      expect(err.name).to.equal("UnauthorizedError");
+      expect(err.JWTError).to.equal("jwt signature is required");
     });
 
-    it("fails if no token provided and auth is required", function(done) {
-      middleware(request, response, err => {
-        expect(err.name).to.equal("UnauthorizedError");
-        expect(err.message).to.match(/JWT is required/);
-        done();
-      });
+    it("fails if no token provided and auth is required", async function() {
+      const err = await expectMiddlewareFailure(request, response);
+      expect(err.name).to.equal("UnauthorizedError");
+      expect(err.message).to.match(/JWT is required/);
     });
 
-    it("accepts a valid token signed with secret", function(done) {
+    it("accepts a valid token signed with secret", async function() {
       request.query.token = token;
-      middleware(request, response, err => {
-        expect(response.locals.JWTPayload).to.include(payload);
-        done(err);
-      });
+      await expectMiddlewareSuccess(request, response);
+      expect(response.locals.JWTPayload).to.include(payload);
     });
 
-    it("sets the JWTVerifyingKid on the response on success", function(done) {
+    it("sets the JWTVerifyingKid on the response on success", async function() {
       request.query.token = token;
-      middleware(request, response, err => {
-        expect(response.locals.JWTVerifyingKid).to.equal("default");
-        done(err);
-      });
+      await expectMiddlewareSuccess(request, response);
+      expect(response.locals.JWTVerifyingKid).to.equal("default");
     });
 
     describe("when auth is not required", function() {
@@ -375,20 +442,14 @@ describe("API authorization", function() {
         middleware = auth.buildMiddleware({ isRequired: false });
       });
 
-      it("accepts if no token provided", function(done) {
-        middleware(request, response, err => {
-          expect(err).to.be.undefined;
-          expect(response.locals.JWTPayload).to.be.undefined;
-          done();
-        });
+      it("accepts if no token provided", async function() {
+        await expectMiddlewareSuccess(request, response);
       });
 
-      it("still sets payload", function(done) {
+      it("still sets payload", async function() {
         request.query.token = token;
-        middleware(request, response, err => {
-          expect(response.locals.JWTPayload).to.include(payload);
-          done(err);
-        });
+        await expectMiddlewareSuccess(request, response);
+        expect(response.locals.JWTPayload).to.include(payload);
       });
 
       describe("and no secret is set", function() {
@@ -399,20 +460,15 @@ describe("API authorization", function() {
           });
         });
 
-        it("accepts if no token provided", function(done) {
-          middleware(request, response, err => {
-            expect(err).to.be.undefined;
-            expect(response.locals.JWTPayload).to.be.undefined;
-            done();
-          });
+        it("accepts if no token provided", async function() {
+          await expectMiddlewareSuccess(request, response);
+          expect(response.locals.JWTPayload).to.be.undefined;
         });
 
-        it("still sets payload", function(done) {
+        it("still sets payload", async function() {
           request.query.token = token;
-          middleware(request, response, err => {
-            expect(response.locals.JWTPayload).to.include(payload);
-            done(err);
-          });
+          await expectMiddlewareSuccess(request, response);
+          expect(response.locals.JWTPayload).to.include(payload);
         });
       });
     });
