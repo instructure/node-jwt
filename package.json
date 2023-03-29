@@ -42,8 +42,7 @@
   "license": "ISC",
   "dependencies": {
     "consul": "^0.29.0",
-    "jsonwebtoken": "^8.2.1",
-    "lodash.mapvalues": "^4.6.0"
+    "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
