@@ -1,0 +1,244 @@
+# npm audit report
+
+ajv  <6.12.3
+Severity: moderate
+Prototype Pollution in Ajv - https://github.com/advisories/GHSA-v88g-cgmw-v5xw
+fix available via `npm audit fix`
+node_modules/ajv
+  ajv-keywords  2.1.1
+  Depends on vulnerable versions of ajv
+  node_modules/ajv-keywords
+  eslint  2.5.0 - 2.5.2 || 4.2.0 - 5.0.0-rc.0
+  Depends on vulnerable versions of ajv
+  Depends on vulnerable versions of table
+  node_modules/eslint
+  table  3.7.10 - 4.0.2
+  Depends on vulnerable versions of ajv
+  node_modules/table
+
+ansi-regex  3.0.0
+Severity: high
+Inefficient Regular Expression Complexity in chalk/ansi-regex - https://github.com/advisories/GHSA-93q8-gq69-wqmw
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/string-width/node_modules/ansi-regex
+node_modules/nyc/node_modules/yargs/node_modules/ansi-regex
+
+braces  <=2.3.0
+Regular Expression Denial of Service in braces - https://github.com/advisories/GHSA-g95f-p29q-9xw4
+Regular Expression Denial of Service (ReDoS) in braces - https://github.com/advisories/GHSA-cwfw-4gq5-mrqx
+No fix available
+node_modules/braces
+  micromatch  0.2.0 - 2.3.11
+  Depends on vulnerable versions of braces
+  Depends on vulnerable versions of parse-glob
+  node_modules/micromatch
+    anymatch  1.2.0 - 1.3.2
+    Depends on vulnerable versions of micromatch
+    node_modules/anymatch
+      chokidar  1.0.0-rc1 - 2.1.8
+      Depends on vulnerable versions of anymatch
+      Depends on vulnerable versions of glob-parent
+      node_modules/chokidar
+        babel-cli  *
+        Depends on vulnerable versions of babel-core
+        Depends on vulnerable versions of babel-register
+        Depends on vulnerable versions of chokidar
+        node_modules/babel-cli
+
+debug  <=2.6.8
+Severity: high
+Regular Expression Denial of Service in debug - https://github.com/advisories/GHSA-gxpj-cx7g-858c
+debug Inefficient Regular Expression Complexity vulnerability - https://github.com/advisories/GHSA-9vvw-cc9w-f27h
+fix available via `npm audit fix --force`
+Will install mocha@10.2.0, which is a breaking change
+node_modules/mocha/node_modules/debug
+  mocha  0.6.0 - 6.2.2 || 7.0.0-esm1 - 7.1.0
+  Depends on vulnerable versions of debug
+  Depends on vulnerable versions of diff
+  Depends on vulnerable versions of growl
+  Depends on vulnerable versions of mkdirp
+  node_modules/mocha
+
+decode-uri-component  <0.2.1
+Severity: high
+decode-uri-component vulnerable to Denial of Service (DoS) - https://github.com/advisories/GHSA-w573-4hg7-7wgq
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/decode-uri-component
+
+diff  <3.5.0
+Severity: high
+Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-h6ch-v84p-w6p9
+fix available via `npm audit fix --force`
+Will install mocha@10.2.0, which is a breaking change
+node_modules/diff
+
+glob-parent  <5.1.2
+Severity: high
+glob-parent vulnerable to Regular Expression Denial of Service in enclosure regex - https://github.com/advisories/GHSA-ww39-953v-wcq6
+No fix available
+node_modules/glob-parent
+  glob-base  *
+  Depends on vulnerable versions of glob-parent
+  node_modules/glob-base
+    parse-glob  >=2.1.0
+    Depends on vulnerable versions of glob-base
+    node_modules/parse-glob
+
+growl  <1.10.0
+Severity: critical
+Growl before 1.10.0 vulnerable to Command Injection - https://github.com/advisories/GHSA-qh2h-chj9-jffq
+fix available via `npm audit fix --force`
+Will install mocha@10.2.0, which is a breaking change
+node_modules/growl
+
+handlebars  <=4.7.6
+Severity: critical
+Arbitrary Code Execution in handlebars - https://github.com/advisories/GHSA-q2c6-c6pm-g3gh
+Prototype Pollution in handlebars - https://github.com/advisories/GHSA-g9r4-xpmj-mj65
+Denial of Service in handlebars - https://github.com/advisories/GHSA-f52g-6jhx-586p
+Prototype Pollution in handlebars - https://github.com/advisories/GHSA-w457-6q6x-cgp9
+Remote code execution in handlebars when compiling templates - https://github.com/advisories/GHSA-f2jv-r9rf-7988
+Arbitrary Code Execution in Handlebars - https://github.com/advisories/GHSA-3cqr-58rm-57f8
+Prototype Pollution in handlebars - https://github.com/advisories/GHSA-q42p-pg8m-cqh6
+Regular Expression Denial of Service in Handlebars - https://github.com/advisories/GHSA-62gr-4qp9-h98f
+Prototype Pollution in handlebars - https://github.com/advisories/GHSA-765h-qjxv-5f44
+Arbitrary Code Execution in handlebars - https://github.com/advisories/GHSA-2cf5-4w76-r9qv
+Depends on vulnerable versions of optimist
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/handlebars
+
+hosted-git-info  <2.8.9
+Severity: moderate
+Regular Expression Denial of Service in hosted-git-info - https://github.com/advisories/GHSA-43f8-2h32-f4cj
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/hosted-git-info
+
+json5  <1.0.2
+Severity: high
+Prototype Pollution in JSON5 via Parse Method - https://github.com/advisories/GHSA-9c47-m6qq-7p4h
+No fix available
+node_modules/json5
+  babel-core  5.8.20 - 7.0.0-beta.3
+  Depends on vulnerable versions of babel-register
+  Depends on vulnerable versions of json5
+  node_modules/babel-core
+    babel-register  *
+    Depends on vulnerable versions of babel-core
+    node_modules/babel-register
+
+kind-of  6.0.0 - 6.0.2
+Severity: high
+Validation Bypass in kind-of - https://github.com/advisories/GHSA-6c8f-qphg-qjgp
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/base/node_modules/kind-of
+node_modules/nyc/node_modules/define-property/node_modules/kind-of
+node_modules/nyc/node_modules/extglob/node_modules/kind-of
+node_modules/nyc/node_modules/micromatch/node_modules/kind-of
+node_modules/nyc/node_modules/nanomatch/node_modules/kind-of
+node_modules/nyc/node_modules/snapdragon-node/node_modules/kind-of
+node_modules/nyc/node_modules/test-exclude/node_modules/kind-of
+node_modules/nyc/node_modules/use/node_modules/kind-of
+
+lodash  <=4.17.20
+Severity: critical
+Regular Expression Denial of Service (ReDoS) in lodash - https://github.com/advisories/GHSA-x5rq-j2xg-h7qm
+Prototype Pollution in lodash - https://github.com/advisories/GHSA-jf85-cpcp-j695
+Command Injection in lodash - https://github.com/advisories/GHSA-35jh-r3h4-6jhm
+Prototype Pollution in lodash - https://github.com/advisories/GHSA-4xc9-xhrj-v574
+Regular Expression Denial of Service (ReDoS) in lodash - https://github.com/advisories/GHSA-29mw-wpgm-hmr9
+Prototype Pollution in lodash - https://github.com/advisories/GHSA-p6mc-m468-83gw
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/lodash
+
+mem  <4.0.0
+Severity: moderate
+Denial of Service in mem - https://github.com/advisories/GHSA-4xcv-9jjx-gfj3
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/mem
+  os-locale  2.0.0 - 3.0.0
+  Depends on vulnerable versions of mem
+  node_modules/nyc/node_modules/os-locale
+    yargs  8.0.0-candidate.0 - 12.0.5
+    Depends on vulnerable versions of os-locale
+    Depends on vulnerable versions of yargs-parser
+    node_modules/nyc/node_modules/yargs
+      nyc  6.2.0-alpha - 13.3.0
+      Depends on vulnerable versions of mkdirp
+      Depends on vulnerable versions of yargs
+      Depends on vulnerable versions of yargs-parser
+      node_modules/nyc
+
+minimatch  <3.0.5
+Severity: high
+minimatch ReDoS vulnerability - https://github.com/advisories/GHSA-f8q6-p94x-37v3
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/minimatch
+
+minimist  <=0.2.3
+Severity: critical
+Prototype Pollution in minimist - https://github.com/advisories/GHSA-vh95-rmgr-6w4m
+Prototype Pollution in minimist - https://github.com/advisories/GHSA-xvch-5gv4-984h
+fix available via `npm audit fix --force`
+Will install mocha@10.2.0, which is a breaking change
+node_modules/mocha/node_modules/minimist
+node_modules/nyc/node_modules/minimist
+  mkdirp  0.4.1 - 0.5.1
+  Depends on vulnerable versions of minimist
+  node_modules/mocha/node_modules/mkdirp
+  node_modules/nyc/node_modules/mkdirp
+  optimist  >=0.6.0
+  Depends on vulnerable versions of minimist
+  node_modules/nyc/node_modules/optimist
+
+mixin-deep  <1.3.2
+Severity: critical
+Prototype Pollution in mixin-deep - https://github.com/advisories/GHSA-fhjf-83wg-r2j9
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/mixin-deep
+
+path-parse  <1.0.7
+Severity: moderate
+Regular Expression Denial of Service in path-parse - https://github.com/advisories/GHSA-hj48-42vr-x3v9
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/path-parse
+
+semver  <5.7.2
+Severity: moderate
+semver vulnerable to Regular Expression Denial of Service - https://github.com/advisories/GHSA-c2qf-rxjj-qqgw
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/semver
+
+set-value  <=2.0.0
+Severity: critical
+Prototype Pollution in set-value - https://github.com/advisories/GHSA-4jqc-8m5r-9rpr
+Prototype Pollution in set-value - https://github.com/advisories/GHSA-4g88-fppr-53pp
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/set-value
+node_modules/nyc/node_modules/union-value/node_modules/set-value
+  union-value  <=1.0.0 || 2.0.0
+  Depends on vulnerable versions of set-value
+  node_modules/nyc/node_modules/union-value
+
+y18n  <3.2.2
+Severity: high
+Prototype Pollution in y18n - https://github.com/advisories/GHSA-c4w7-xm78-47vh
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/y18n
+
+yargs-parser  6.0.0 - 13.1.1
+Severity: moderate
+yargs-parser Vulnerable to Prototype Pollution - https://github.com/advisories/GHSA-p9pc-299p-vxgp
+fix available via `npm audit fix`
+node_modules/nyc/node_modules/yargs-parser
+node_modules/nyc/node_modules/yargs/node_modules/yargs-parser
+
+40 vulnerabilities (2 low, 14 moderate, 17 high, 7 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.

@@ -2,23 +2,22 @@ version: '2'
 services:
   app:
     build: .
+    platform: linux/arm64/v8
     volumes:
       - .:/usr/src/app
-      - node_modules:/usr/src/app/node_modules
+      # - node_modules:/usr/src/app/node_modules
     links:
       - consul
     environment:
       NODE_ENV: development
       CONSUL_HOST: "consul"
       CONSUL_PORT: "8500"
-      CONSUL_JWT_SECRET_PREFIX: "config/development/secrets"
-
+      CONSUL_JWT_SECRET_PREFIX: "/config/development/secrets"
+    
   consul:
-    image: gliderlabs/consul-server:0.6
-    command: -node canvas-consul -dc canvas -bootstrap-expect 1
-    environment:
-      GOMAXPROCS: "2"
-      VIRTUAL_PORT: 8500
+    image: ghcr.io/razorsh4rk/fakeconsul:master
+    ports:
+      - "8500:8500"
+    container_name: consul
+    restart: always
 
-volumes:
-  node_modules:

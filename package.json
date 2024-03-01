@@ -41,8 +41,8 @@
   "author": "Xander Moffatt, Andrew Huff, Jacob Fugal",
   "license": "ISC",
   "dependencies": {
-    "consul": "^0.29.0",
-    "jsonwebtoken": "^9.0.0"
+    "consul": "^1.2.0",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -59,7 +59,8 @@
     "mocha": "^3.4.2",
     "nyc": "^11.0.3",
     "prettier": "^1.11.1",
-    "sinon": "^2.3.6",
+    "proxyquire": "^2.1.3",
+    "sinon": "^17.0.1",
     "sinon-chai": "^2.11.0"
   }
 }
