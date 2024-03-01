@@ -2,10 +2,12 @@ version: '2'
 services:
   app:
     build: .
+    depends_on: 
+      - consul
     platform: linux/arm64/v8
     volumes:
       - .:/usr/src/app
-      # - node_modules:/usr/src/app/node_modules
+      - ./coverage:/usr/src/app/coverage
     links:
       - consul
     environment:
@@ -15,7 +17,7 @@ services:
       CONSUL_JWT_SECRET_PREFIX: "/config/development/secrets"
     
   consul:
-    image: ghcr.io/razorsh4rk/fakeconsul:master
+    image: fakeconsul #ghcr.io/razorsh4rk/fakeconsul:master
     ports:
       - "8500:8500"
     container_name: consul
