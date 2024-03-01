@@ -17,7 +17,7 @@ services:
       CONSUL_JWT_SECRET_PREFIX: "/config/development/secrets"
     
   consul:
-    image: fakeconsul #ghcr.io/razorsh4rk/fakeconsul:master
+    image: ghcr.io/razorsh4rk/fakeconsul:master
     ports:
       - "8500:8500"
     container_name: consul
