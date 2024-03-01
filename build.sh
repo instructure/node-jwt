@@ -29,7 +29,7 @@ fi
 echo ": Run linters and tests..."
 CONT_NAME="container_$((1 + $RANDOM % 100))"
 $DOCKER_COMPOSE_RUN -d --name $CONT_NAME app tail -f /dev/null # don't do anything, but don't exit either
-# $DOCKER_EXEC $CONT_NAME yarn install
+$DOCKER_EXEC $CONT_NAME yarn install
 $DOCKER_EXEC $CONT_NAME yarn run lint:check
 $DOCKER_EXEC $CONT_NAME yarn run coverage:run
 $DOCKER_EXEC $CONT_NAME yarn run coverage:check
@@ -39,4 +39,4 @@ echo ": Publish code coverage..."
 docker cp $(docker-compose ps -q app):/usr/src/app/coverage/lcov-report/. coverage
 
 echo ": Build successful!"
-#docker kill $(docker ps -q)
+docker kill $(docker ps -q)
