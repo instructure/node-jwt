@@ -19,7 +19,7 @@ module.exports = async function buildKeystoreFromConsul() {
     const keystore = Object.assign({}, ...pairs);
 
     const vals = mapObj(keystore, key => {
-      return Buffer.from(key, "base64");
+      return Buffer.from(key);
     });
     return vals;
   }

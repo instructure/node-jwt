@@ -33,7 +33,7 @@ exports.extractToken = function extractToken(req) {
   return null;
 };
 
-exports.lookupKey = async function lookupKey(
+exports.lookupKey = async function(
   kid,
   keystoreBuilder = keystoreBuilders.fromMany
 ) {

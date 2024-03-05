@@ -1,14 +1,9 @@
-const consul = require("consul");
-const { promisify } = require("util");
+const Consul = require("consul");
 
-const client = consul({
+const client = new Consul({
   host: process.env.CONSUL_HOST,
   port: process.env.CONSUL_PORT
 });
-
-const rawDel = promisify(client.kv.del).bind(client.kv);
-const rawSet = promisify(client.kv.set).bind(client.kv);
-const rawGet = promisify(client.kv.get).bind(client.kv);
 
 const CACHE_DURATION = 10 * 60 * 1000; // ten minutes
 const cache = {
@@ -39,48 +34,33 @@ const cache = {
 };
 
 exports.delAll = async function delAll(options) {
-  const { prefix } = Object.assign(
-    { prefix: process.env.CONSUL_JWT_SECRET_PREFIX },
-    options
-  );
-
   const consulOptions = {
-    key: prefix,
+    key: process.env.CONSUL_JWT_SECRET_PREFIX,
     recurse: true
   };
-  const result = await rawDel(consulOptions);
+  const result = await client.kv.del(consulOptions.key);
   cache.clear();
   return result;
 };
 
 exports.set = async function set(k, v, options) {
-  const { prefix } = Object.assign(
-    { prefix: process.env.CONSUL_JWT_SECRET_PREFIX },
-    options
-  );
-
   const consulOptions = {
-    key: `${prefix}/${k}`,
+    key: `${process.env.CONSUL_JWT_SECRET_PREFIX}/${k}`,
     value: v
   };
-  const result = await rawSet(consulOptions);
+  const result = await client.kv.set(consulOptions);
   cache.clear();
   return result;
 };
 
 exports.getAllUncached = async function getAllUncached(options) {
-  const { prefix } = Object.assign(
-    { prefix: process.env.CONSUL_JWT_SECRET_PREFIX },
-    options
-  );
-
   const consulOptions = {
-    key: prefix,
+    key: process.env.CONSUL_JWT_SECRET_PREFIX,
     recurse: true
   };
-  const pairs = (await rawGet(consulOptions)) || [];
+  const pairs = (await client.kv.get(consulOptions)) || [];
   return pairs.map(kv => {
-    const key = kv.Key.replace(`${prefix}/`, "");
+    const key = kv.Key.replace(`${process.env.CONSUL_JWT_SECRET_PREFIX}/`, "");
     return { [key]: kv.Value };
   });
 };
