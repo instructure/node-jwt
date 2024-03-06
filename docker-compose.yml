@@ -14,7 +14,7 @@ services:
       NODE_ENV: development
       CONSUL_HOST: "consul"
       CONSUL_PORT: "8500"
-      CONSUL_JWT_SECRET_PREFIX: "/config/development/secrets"
+      CONSUL_JWT_SECRET_PREFIX: "config/development/secrets"
     
   consul:
     image: ghcr.io/razorsh4rk/fakeconsul:master
