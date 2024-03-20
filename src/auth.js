@@ -226,8 +226,12 @@ exports.createToken = async function createToken(payload, options) {
       keystore[kid] || keystore.default || keystore[Object.keys(keystore)[0]];
     // eslint-disable-next-line security/detect-object-injection
     const signingKid = Object.keys(keystore).find(k => keystore[k] === key);
-    return jwt.sign(payload, key, { algorithm, header: { kid: signingKid } });
+    return jwt.sign(payload, key, {
+      algorithm: algorithm,
+      header: { kid: signingKid }
+    });
   } catch (err) {
+    console.log(err);
     throw new UnauthorizedError(err, "Token signing failed");
   }
 };
