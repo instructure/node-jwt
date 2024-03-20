@@ -4,6 +4,7 @@ const stubEnv = require("../stubEnv");
 const auth = require("../../src/auth");
 const UnauthorizedError = require("../../src/unauthorizedError");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 // We disallow the HS256 algorithm for security reasons.
 // `jwt` uses this algorithm by default; let's set a new default
@@ -171,21 +172,14 @@ describe("API authorization", function() {
 
     it("verifies with ES512 algorithm", async function() {
       // this is a random keypair generated just for this test
-      const publicKey =
-        "-----BEGIN PUBLIC KEY-----\n" +
-        "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEXcjKOpKzx4Ij8vwndnjzpPyvNGZpeTLS\n" +
-        "0SG7kAmbGOjd1ivK/AsHy6GzXeNwo6LAr80wYYBOVrWmbW5O5whXcQ==\n" +
-        "-----END PUBLIC KEY-----\n";
+      const { privateKey, publicKey } = crypto.generateKeyPairSync("ec", {
+        namedCurve: "secp521r1" // For ES512, use the secp521r1 curve
+      });
+      const privkey = privateKey.export({ type: "pkcs8", format: "pem" });
+      const pubkey = publicKey.export({ type: "spki", format: "pem" });
 
-      const privateKey =
-        "-----BEGIN EC PRIVATE KEY-----\n" +
-        "MHQCAQEEIDj7vlqvdVuNC5gvlEAyPmaZrKtZ/1Eket3XSL2F9vewoAcGBSuBBAAK\n" +
-        "oUQDQgAEXcjKOpKzx4Ij8vwndnjzpPyvNGZpeTLS0SG7kAmbGOjd1ivK/AsHy6Gz\n" +
-        "XeNwo6LAr80wYYBOVrWmbW5O5whXcQ==\n" +
-        "-----END EC PRIVATE KEY-----\n";
-
-      const signingKeystoreBuilder = () => ({ default: privateKey });
-      const verifyingKeystoreBuilder = () => ({ default: publicKey });
+      const signingKeystoreBuilder = () => ({ default: privkey });
+      const verifyingKeystoreBuilder = () => ({ default: pubkey });
 
       const token = await auth.createToken(payload, {
         algorithm: "ES512",
