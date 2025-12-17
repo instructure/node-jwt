@@ -1,4 +1,4 @@
-FROM instructure/node:20
+FROM instructure/node:22
 
 ENV APP_HOME /usr/src/app
 

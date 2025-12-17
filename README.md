@@ -182,7 +182,7 @@ We use [eslint](http://eslint.org/) and
 impose style, respectively. These tools have been set up to stay out of your way
 while keeping style consistent, as well as occasionally pointing out possible errors.
 
-Every commit needs to be linted before pushing: `docker-compose run --rm app yarn run lint:fix`.
+Every commit needs to be linted before pushing: `docker compose run --rm app yarn run lint:fix`.
 
 We recommend using editor integrations or adding a pre-push git hook to
 take care of this automatically.
